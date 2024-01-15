@@ -49,36 +49,6 @@ path_to_update_flag = os.path.join(scripts_path, update_flag)
 is_update_available = False
 if os.path.exists(path_to_update_flag):
     is_update_available = True
-    try:
-        print(Fore.CYAN + "Thank you for using:" + Fore.GREEN + "https://github.com/Gerschel/sd_web_ui_preset_utils/")
-        print(Fore.RED +"""
-______                   _    ___  ___                                  
-| ___ \                 | |   |  \/  |                                  
-| |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
-|  __/ '__/ _ \/ __|/ _ \ __| | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
-| |  | | |  __/\__ \  __/ |_  | |  | | (_| | | | | (_| | (_| |  __/ |   
-\_|  |_|  \___||___/\___|\__| \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
-                                                         __/ |          
-                                                        |___/           
-""")
-        print(Fore.YELLOW + "By: Gerschel Payne")
-        print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
-    except NameError:
-        print( "Thank you for using: https://github.com/Gerschel/sd_web_ui_preset_utils/")
-        print("""
-______                   _    ___  ___                                  
-| ___ \                 | |   |  \/  |                                  
-| |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
-|  __/ '__/ _ \/ __|/ _ \ __| | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
-| |  | | |  __/\__ \  __/ |_  | |  | | (_| | | | | (_| | (_| |  __/ |   
-\_|  |_|  \___||___/\___|\__| \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
-                                                         __/ |          
-                                                        |___/           
-""")
-        print("By: Gerschel Payne")
-        print("Preset Manager: Checking for pre-existing configuration files.")
-
-
     source_path = os.path.join(file_path, additional_config_source)
     target_path = os.path.join(file_path, additional_config_target)
     if not os.path.exists(target_path):
@@ -175,6 +145,10 @@ class PresetManager(scripts.Script):
             "Batch size",
             "CFG Scale",
             "Image CFG Scale",
+            "Refiner",
+	        "Checkpoint",
+	        "Switch at",
+	        "Enable ADetailer",
             "Script",
             "Input directory",
             "Output directory",
@@ -250,55 +224,6 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_preset_ds_dd"
             )
 
-        # instance level
-        # quick set tab
-        self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
-        self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
-        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
-
-
-        # Detailed Save
-        self.stackable_check_det = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check_det", render=False)
-        self.save_detail_md = gr.Markdown(render=False, value="<center>Options are all options hardcoded, and additional you added in additional_components.py</center>\
-            <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
-            <center>To apply, go to quick set. Save now works immediately in other tab without restart, filters out non-common between tabs.</center>\
-            <center>Settings stack. If it's not checked, it wont overwrite. Apply one, then another. Reset is old, update how you need.</center>\
-                <center>Stackable checkbox is not used for saves, it's used when making a selection from the dropdown, whether to apply as stackable or not</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
-        self.save_detailed_as = gr.Text(render=False, label="Detailed Save As", elem_id=f"{self.elm_prfx}_save_ds_txt")
-        self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
-        self.save_detailed_delete_button = gr.Button(value="❌Delete", render=False, elem_id=f"{self.elm_prfx}_del_ds_bttn")
-        # **********************************           NOTE  ********************************************
-        # NOTE: This fix uglified the code ui is now _ui, row created in before_component, stored in var, used in after_component
-        # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
-        # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
-        #self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
-
-
-        # Restart tab
-        self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False, elem_id=f"{self.elm_prfx}_restart_bttn")
-
-
-        # Print tab
-        self.gather_button = gr.Button(value="Gather", render = False, variant="primary", elem_id=f"{self.elm_prfx}_gather_bttn")         # Helper button to print component map
-        self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True, elem_id=f"{self.elm_prfx}_inspect_dd")
-        self.inspect_ta = gr.TextArea(render=False, elem_id=f"{self.elm_prfx}_inspect_txt")
-
-
-        self.info_markdown = gr.Markdown(value="<center>!⚠! THIS IS IN ALPHA !⚠!</center>\n\
-<center>🐉 I WILL INTRODUCE SOME BREAKING CHANGES (I will try to avoid it) 🐉</center>\
-<center>🙏 Please recommend your favorite script composers to implement element id's 🙏</center>\n\
-<br>\
-<center>If they implement unique element id's, they can get support for presets without making their own</center>\
-<center>❗ I have not added element id support yet, there are more labels than id's ❗</center>\
-<br>\
-<center>❗❗But labels sometimes collide. I can't do 'Mask Blur' because it also matches 'Mask Blur' in scripts❗❗</center>\
-<center>Try adding a component label to additional_components.json with element id 'null' without quotes for None</center>\
-<br>\
-<center><strong>I would like to support all custom scripts, but need script path/name/title, some distinguishing factor</strong></center>\
-<center>through the kwargs in IOComponent_init 'after_compoenet' and 'before_component'</center>\
-<center><link>https://github.com/Gerschel/sd_web_ui_preset_utils</link></center>", render=False)
-
-
     def title(self):
         return "Presets"
 
@@ -322,7 +247,7 @@ class PresetManager(scripts.Script):
         #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
         #print(kwargs.get("label") == self.before_component_label, "TEST", kwargs.get("label"))
         #if kwargs.get("label") == self.before_component_label:
-            with gr.Accordion(label="Preset Manager", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
+            with gr.Accordion(label="Preset Manager", open = true, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
                     with gr.Row(equal_height = True):
@@ -330,51 +255,7 @@ class PresetManager(scripts.Script):
                                 PresetManager.txt2img_preset_dropdown.render()
                             else:
                                 PresetManager.img2img_preset_dropdown.render()
-                            with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_qs"):
-                                self.stackable_check.render()
-                    with gr.Row():
-                        with gr.Column(scale=12):
-                            self.save_as.render()
-                        with gr.Column(scale=1):
-                            self.save_button.render()
-
-                # Detailed Save TAB
-                with gr.Tab(label="Detailed"):
-                    with gr.Accordion(label="Basic info", open=False):
-                        self.save_detail_md.render()
-                    with gr.Column(scale=1):
-                        with gr.Row(equal_height = True):
-                            if self.is_txt2img:
-                                PresetManager.txt2img_save_detailed_name_dropdown.render()
-                            else:
-                                PresetManager.img2img_save_detailed_name_dropdown.render()
-                            with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_ds"):
-                                self.save_detailed_delete_button.render()
-                                self.stackable_check_det.render()
-                        with gr.Row():
-                            with gr.Column(scale=12):
-                                self.save_detailed_as.render()
-                            with gr.Column(scale=1):
-                                self.save_detailed_button.render()
-                    with gr.Column(scale=1) as detailed_check:
-                        self.detailed_check = detailed_check
-                        #self.save_detailed_checkbox_group.render()
-
-                # Restart TAB
-                with gr.Tab(label="Restart"):
-                    self.gr_restart_bttn.render()
-
-                # Print TAB
-                with gr.Tab(label = "Print"):
-                    self.gather_button.render()
-                    self.inspect_dd.render()
-                    self.inspect_ta.render()
-
-                # Info TAB
-                with gr.Tab(label="Info"):
-                    self.info_markdown.render()
-
-
+               
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
             self.all_components.append(self.compinfo(
