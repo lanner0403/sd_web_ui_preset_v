@@ -82,6 +82,47 @@ class PresetManagerMover{
         this.target = gradioApp().getElementById(new_target)
     }
 }
+
+setTimeout(() => {
+    document.getElementById("preset-v_hide_all_bttn").addEventListener("click", sethideall);
+}, 10000);
+
+setTimeout(() => {
+    document.getElementById("preset-v_show_all_bttn").addEventListener("click", setshowall);
+}, 10000);
+
+function sethideall(){
+    document.getElementById("txt2img_settings").style="display:none !important";
+    document.getElementById("setting_sd_vae").style="display:none";
+    document.getElementById("refresh_sd_vae").style="display:none";
+    document.getElementById("setting_CLIP_stop_at_last_layers").style="display:none";
+    document.getElementById("txt2img_neg_prompt").style="display:none";
+    document.getElementById("phystonPrompt_txt2img_neg_prompt").style="display:none";
+    document.getElementById("txt2img_tools").style="display:none";
+    document.getElementById("txt2img_styles_row").style="display:none";
+    try{
+        document.getElementById("component-69").style="";
+        document.getElementById("component-61").style="";
+        document.getElementById("component-3301").style="";
+    } catch(e){
+        //alert(e);
+    }
+}
+
+function setshowall(){
+    document.getElementById("txt2img_settings").style="flex-grow: 1;min-width: min(320px, 100%);";
+    document.getElementById("setting_sd_vae").style="";
+    document.getElementById("refresh_sd_vae").style="";
+    document.getElementById("setting_CLIP_stop_at_last_layers").style="";
+    document.getElementById("txt2img_neg_prompt").style="";
+    document.getElementById("phystonPrompt_txt2img_neg_prompt").style="";
+    document.getElementById("txt2img_tools").style="";
+    document.getElementById("txt2img_styles_row").style="";
+    document.getElementById("component-69").style="";
+    document.getElementById("component-61").style="";
+    document.getElementById("component-3301").style="";
+}
+
 //function move(){
 //        let src = gradioApp().getElementById("txt2img_preset_manager_accordion");
 //        //let target = Array.from(gradioApp().querySelectorAll("div")).filter( d => d.hasAttribute("class") ? d.getAttribute("class").split(" ")[0] == "gradio-container": false)[0]
