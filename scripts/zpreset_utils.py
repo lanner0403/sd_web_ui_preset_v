@@ -49,44 +49,6 @@ path_to_update_flag = os.path.join(scripts_path, update_flag)
 is_update_available = False
 if os.path.exists(path_to_update_flag):
     is_update_available = True
-    try:
-        print(Fore.CYAN + "Thank you for using:" + Fore.GREEN + "https://github.com/Gerschel/sd_web_ui_preset_utils/")
-        print(Fore.RED +"""
-______                   _    ___  ___                                  
-| ___ \                 | |   |  \/  |                                  
-| |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
-|  __/ '__/ _ \/ __|/ _ \ __| | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
-| |  | | |  __/\__ \  __/ |_  | |  | | (_| | | | | (_| | (_| |  __/ |   
-\_|  |_|  \___||___/\___|\__| \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
-                                                         __/ |          
-                                                        |___/           
-""")
-        print(Fore.YELLOW + "By: Gerschel Payne")
-        print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
-    except NameError:
-        print( "Thank you for using: https://github.com/Gerschel/sd_web_ui_preset_utils/")
-        print("""
-______                   _    ___  ___                                  
-| ___ \                 | |   |  \/  |                                  
-| |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
-|  __/ '__/ _ \/ __|/ _ \ __| | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
-| |  | | |  __/\__ \  __/ |_  | |  | | (_| | | | | (_| | (_| |  __/ |   
-\_|  |_|  \___||___/\___|\__| \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
-                                                         __/ |          
-                                                        |___/           
-""")
-        print("By: Gerschel Payne")
-        print("Preset Manager: Checking for pre-existing configuration files.")
-
-
-    source_path = os.path.join(file_path, additional_config_source)
-    target_path = os.path.join(file_path, additional_config_target)
-    if not os.path.exists(target_path):
-        shutil.move(source_path, target_path)
-        print(f"Created: {additional_config_target}")
-    else:
-        print(f"Not writing {additional_config_target}: config exists already")
-                    
     source_path = os.path.join(file_path, presets_config_source)
     target_path = os.path.join(file_path, presets_config_target)
     if not os.path.exists(target_path):
@@ -94,11 +56,7 @@ ______                   _    ___  ___
         print(f"Created: {presets_config_target}")
     else:
         print(f"Not writing {presets_config_target}: config exists already")
-                    
-                    
     os.remove(path_to_update_flag)
-
-
 
 class PresetManager(scripts.Script):
 
@@ -141,67 +99,18 @@ class PresetManager(scripts.Script):
         self.settings_file = "presets.json"
         #self.additional_settings_file = "additional_components.json"
         self.additional_settings_file = "additional_configs.json"
-
-
         self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
-        self.available_components = [
-	    "Stable Diffusion checkpoint",
-            "Prompt", #! must create filter for hr prompt and neg prompt using elem_id in after component 5/28/23
-            "Negative prompt",
-            "Sampling steps",
-            "Sampling method",
-            "Width",
-            "Height",
-            "Restore faces",
-            "Tiling",
-            "Hires. fix" if repo != "vlads" else "Hires fix",#NewNew Vlads #!update config needs a version check
-            "Highres. fix",#old
-            "Upscaler",#new
-            "Upscale by",#new
-            "Hires. steps",#NewOld,
-            "Hires steps",#NewNew
-            "Resize width to",#New
-            "Resize height to",#New
-            "Hires sampling method",#Newest 5/27/23
-            "Seed",
-            "Extra",
-            "Variation seed",
-            "Variation strength",
-            "Resize seed from width",
-            "Resize seed from height",
-            "Firstpass width",#old now is upscaler
-            "Firstpass height",#old now is upscale by
-            "Denoising strength",
-            "Batch count",
-            "Batch size",
-            "CFG Scale",
-            "Image CFG Scale",
-	    "Refiner",
-	    "Checkpoint",
-	    "Switch at",
-	    "Enable ADetailer",
-            "Script",
-            "Input directory",
-            "Output directory",
-            "Inpaint batch mask directory (required for inpaint batch processing only)",
-            "Resize mode",
-            "Scale",
-            "Mask blur",
-            "Mask transparency",
-            "Mask mode",
-            "Masked content",
-            "Inpaint area",
-            "Only masked padding, pixels",
-        ]
+
+        # Read saved settings
+        PresetManager.all_presets = self.get_config(self.settings_file)
+        
+        self.available_components = list(PresetManager.all_presets["Reset"].keys())
         
         if is_update_available:
             self.update_config()
 
         # components that pass through after_components
         self.all_components = []
- 
-        # Read saved settings
-        PresetManager.all_presets = self.get_config(self.settings_file)
 
         # Initialize
         self.component_map = {k: None for k in self.available_components}
@@ -220,7 +129,7 @@ class PresetManager(scripts.Script):
         This method is called from .show(), as that's the first method ScriptRunner calls after handing some state dat (is_txt2img, is_img2img2)
         """
         #self.elm_prfx = f"{'txt2img' if self.is_txt2img else 'img2img'}"
-        self.elm_prfx = "preset-util"
+        self.elm_prfx = "preset-v"
 
 
         # UI elements
@@ -248,6 +157,8 @@ class PresetManager(scripts.Script):
         self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
         #self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         #self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
+        self.hide_all_button = gr.Button(value="easy style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_hide_all_bttn")
+        self.show_all_button = gr.Button(value="nomal style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_show_all_bttn")
 
 
         # Detailed Save
@@ -323,6 +234,9 @@ class PresetManager(scripts.Script):
                         PresetManager.img2img_preset_dropdown.render()
                     #with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_qs"):
                         #self.stackable_check.render()
+                with gr.Row(equal_height = True):
+                    self.hide_all_button.render()
+                    self.show_all_button.render()
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
@@ -367,7 +281,6 @@ class PresetManager(scripts.Script):
                 inputs=[PresetManager.img2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
-
 
     def f_b_syncer(self):
         """
