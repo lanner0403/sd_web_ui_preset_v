@@ -88,7 +88,7 @@ class PresetManager(scripts.Script):
                 self.update_component_name(preset, old_val, new_val)
                     
         #PresetManager.all_presets = config
-        self.save_config(self.settings_file, config)
+        #self.save_config(self.settings_file, config)
 
 
     def __init__(self, *args, **kwargs):
@@ -99,12 +99,14 @@ class PresetManager(scripts.Script):
         self.settings_file = "presets.json"
         #self.additional_settings_file = "additional_components.json"
         self.additional_settings_file = "additional_configs.json"
-        self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
+        #self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
 
         # Read saved settings
         PresetManager.all_presets = self.get_config(self.settings_file)
+        PresetManager.size_presets = self.get_config(self.additional_settings_file)
         
         self.available_components = list(PresetManager.all_presets["Reset"].keys())
+        self.available_size_components = list(PresetManager.size_presets["Width"].keys())
         
         if is_update_available:
             self.update_config()
@@ -114,12 +116,14 @@ class PresetManager(scripts.Script):
 
         # Initialize
         self.component_map = {k: None for k in self.available_components}
-        self.additional_components_map = {k:None for k in self.additional_components_for_presets["additionalComponents"]}
-        self.additional_components = [x for x in self.additional_components_map] # acts like available_components list for additional components
+        self.size_component_map = {k:None for k in self.available_size_components}
+        print(self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None))
+        print(self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None))
+        #self.additional_components = [x for x in self.additional_components_map] # acts like available_components list for additional components
 
         # combine defaults and choices
-        self.component_map = {**self.component_map, **self.additional_components_map}
-        self.available_components = self.available_components + self.additional_components
+        #self.component_map = {**self.component_map, **self.additional_components_map}
+        #self.available_components = self.available_components + self.additional_components
 
 
     
@@ -151,56 +155,21 @@ class PresetManager(scripts.Script):
                 render = False,
                 elem_id=f"{self.elm_prfx}_preset_qs_dd"
             )
+            # size ddl
+            PresetManager.txt2img_size_dropdown = gr.Dropdown(
+                label="Size",
+                choices=list(PresetManager.size_presets.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_size_qs_dd"
+            )
 
         # instance level
         # quick set tab
-        self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
+        #self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
         #self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         #self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
         self.hide_all_button = gr.Button(value="easy style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_hide_all_bttn")
         self.show_all_button = gr.Button(value="nomal style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_show_all_bttn")
-
-
-        # Detailed Save
-        self.stackable_check_det = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check_det", render=False)
-        self.save_detail_md = gr.Markdown(render=False, value="<center>Options are all options hardcoded, and additional you added in additional_components.py</center>\
-            <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
-            <center>To apply, go to quick set. Save now works immediately in other tab without restart, filters out non-common between tabs.</center>\
-            <center>Settings stack. If it's not checked, it wont overwrite. Apply one, then another. Reset is old, update how you need.</center>\
-                <center>Stackable checkbox is not used for saves, it's used when making a selection from the dropdown, whether to apply as stackable or not</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
-        self.save_detailed_as = gr.Text(render=False, label="Detailed Save As", elem_id=f"{self.elm_prfx}_save_ds_txt")
-        self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
-        self.save_detailed_delete_button = gr.Button(value="❌Delete", render=False, elem_id=f"{self.elm_prfx}_del_ds_bttn")
-        # **********************************           NOTE  ********************************************
-        # NOTE: This fix uglified the code ui is now _ui, row created in before_component, stored in var, used in after_component
-        # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
-        # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
-        #self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
-
-
-        # Restart tab
-        self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False, elem_id=f"{self.elm_prfx}_restart_bttn")
-
-
-        # Print tab
-        self.gather_button = gr.Button(value="Gather", render = False, variant="primary", elem_id=f"{self.elm_prfx}_gather_bttn")         # Helper button to print component map
-        self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True, elem_id=f"{self.elm_prfx}_inspect_dd")
-        self.inspect_ta = gr.TextArea(render=False, elem_id=f"{self.elm_prfx}_inspect_txt")
-
-
-        self.info_markdown = gr.Markdown(value="<center>!⚠! THIS IS IN ALPHA !⚠!</center>\n\
-<center>🐉 I WILL INTRODUCE SOME BREAKING CHANGES (I will try to avoid it) 🐉</center>\
-<center>🙏 Please recommend your favorite script composers to implement element id's 🙏</center>\n\
-<br>\
-<center>If they implement unique element id's, they can get support for presets without making their own</center>\
-<center>❗ I have not added element id support yet, there are more labels than id's ❗</center>\
-<br>\
-<center>❗❗But labels sometimes collide. I can't do 'Mask Blur' because it also matches 'Mask Blur' in scripts❗❗</center>\
-<center>Try adding a component label to additional_components.json with element id 'null' without quotes for None</center>\
-<br>\
-<center><strong>I would like to support all custom scripts, but need script path/name/title, some distinguishing factor</strong></center>\
-<center>through the kwargs in IOComponent_init 'after_compoenet' and 'before_component'</center>\
-<center><link>https://github.com/Gerschel/sd_web_ui_preset_utils</link></center>", render=False)
 
 
     def title(self):
@@ -235,8 +204,10 @@ class PresetManager(scripts.Script):
                     #with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_qs"):
                         #self.stackable_check.render()
                 with gr.Row(equal_height = True):
-                    self.hide_all_button.render()
-                    self.show_all_button.render()
+                    PresetManager.txt2img_size_dropdown.render()
+            with gr.Row(equal_height = True):
+                self.hide_all_button.render()
+                self.show_all_button.render()
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
@@ -247,6 +218,11 @@ class PresetManager(scripts.Script):
                                                       kwargs=kwargs
                                                      )
                                       )
+            #if hasattr(component, "label"):
+                #print(f"label:{component.label}")
+            #elif hasattr(component, "elem_id"):
+                #print(f"elem_id:{component.elem_id}")
+
         label = kwargs.get("label")
         ele = kwargs.get("elem_id")
         # TODO: element id
@@ -255,6 +231,9 @@ class PresetManager(scripts.Script):
             #!Hack to remove conflict between main Prompt and hr Prompt
             if self.component_map[label] is None:
                 self.component_map.update({component.label: component})
+        if label in self.size_component_map:
+            if self.size_component_map[label] is None:
+                self.size_component_map.update({component.label: component})
         if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
             self._ui()
 
@@ -273,6 +252,11 @@ class PresetManager(scripts.Script):
                 fn=self.fetch_valid_values_from_preset,
                 inputs=[PresetManager.txt2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            )
+            PresetManager.txt2img_size_dropdown.change(
+                fn=self.fetch_valid_values_from_size,
+                inputs=[PresetManager.txt2img_size_dropdown] + [self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+                outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
             )
         else:
             # Quick Set Tab
@@ -327,30 +311,24 @@ class PresetManager(scripts.Script):
                 else 
                     self.component_map[comp_name].value
                 for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+    
+    def fetch_valid_values_from_size(self, selection, *comps_vals):
+        print(selection)
+        print(comps_vals)
+        return [
+            PresetManager.size_presets[selection][comp_name] 
+                if (comp_name in PresetManager.size_presets[selection] 
+                    and (
+                        True if not hasattr(self.size_component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.size_presets[selection][comp_name] in self.size_component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.size_component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
  
-
-    def save_detailed_fetch_valid_values_from_preset(self, stackable_flag, selection, *comps_vals):
-        """
-            Fetches selected preset from dropdown choice and filters valid components from choosen preset
-            non-valid components will still have None as the page didn't contain any
-        """
-        return [[ comp_name for comp_name in PresetManager.all_presets[selection] ], gr.update(value = selection)] + self.fetch_valid_values_from_preset(stackable_flag, selection, *comps_vals)
-
-    def delete_preset(self, selection, filepath):
-        """Delete preset from local memory and write file with it removed
-            filepath is not hardcoded so it can be used with other preset profiles if support gets added for loading additional presets from shares
-        """
-        #For writing and keeping front-end in sync with back-end
-        PresetManager.all_presets.pop(selection)
-        #Keep front-end in sync with backend
-        PresetManager.txt2img_preset_dropdown.choice = PresetManager.all_presets.keys()
-        PresetManager.img2img_preset_dropdown.choice = PresetManager.all_presets.keys()
-        PresetManager.txt2img_save_detailed_name_dropdown.choice = PresetManager.all_presets.keys()
-        PresetManager.img2img_save_detailed_name_dropdown.choice = PresetManager.all_presets.keys()
-        file = os.path.join(PresetManager.BASEDIR, filepath)
-        with open(file, 'w') as f:
-            json.dump(PresetManager.all_presets, f, indent=4)
-        return [gr.Dropdown.update(choices= list(PresetManager.all_presets.keys()), value=list(PresetManager.all_presets.keys())[0])] * 4
 
     def local_request_restart(self):
         "Restart button"
