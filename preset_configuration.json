@@ -1,5 +1,7 @@
 {
     "Reset": {
+	"Prompt": "",
+	"Negative prompt": "",
         "Sampling method": "Euler a",
         "Width": 512,
         "Height": 512,
@@ -16,13 +18,17 @@
         "Batch size": 1,
         "CFG Scale": 7,
         "Hires. fix": false,
-        "Upscaler": 0,
-        "Upscale by": 0,
-        "Sampling steps": 20
+        "Upscaler": "R-ESRGAN 4x+",
+        "Upscale by": 2,
+	"Denoising strength": 0.4,
+	"Hires steps": 2,
+	"Refiner": false,
+	"Checkpoint": "",
+	"Switch at": 0.3,
+        "Sampling steps": 10,
+	"Enable ADetailer": false
     },
-    "Quick batch": {
-	"Stable Diffusion checkpoint": "hardcoreHentai12_v12BakedVAE.safetensors [f2e7c9005b]",
-	"Prompt": "best quality,masterpiece,",
+    "Quick": {
 	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
@@ -51,8 +57,6 @@
 	"Enable ADetailer": false
     },
     "Better": {
-        "Stable Diffusion checkpoint": "hardcoreHentai12_v12BakedVAE.safetensors [f2e7c9005b]",
-	"Prompt": "best quality,masterpiece,",
 	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
@@ -81,8 +85,6 @@
 	"Enable ADetailer": true
     },
     "Great": {
-        "Stable Diffusion checkpoint": "hardcoreHentai12_v12BakedVAE.safetensors [f2e7c9005b]",
-	"Prompt": "best quality,masterpiece,",
 	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
