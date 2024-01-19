@@ -1,6 +1,5 @@
 {
     "Reset": {
-	"Prompt": "",
 	"Negative prompt": "",
         "Sampling method": "Euler a",
         "Width": 512,
