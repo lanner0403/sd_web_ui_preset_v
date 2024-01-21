@@ -85,11 +85,15 @@ class PresetManagerMover{
 
 setTimeout(() => {
     document.getElementById("preset-v_hide_all_bttn").addEventListener("click", sethideall);
+    document.getElementById("preset-v_show_all_bttn").addEventListener("click", setshowall);
 }, 10000);
 
 setTimeout(() => {
-    document.getElementById("preset-v_show_all_bttn").addEventListener("click", setshowall);
-}, 10000);
+    if(window.innerWidth < 800){
+        document.getElementById("preset-v_hide_all_bttn").click();
+        document.getElementById("preset-v_Preset1_btn").click();
+    }
+}, 10100);
 
 function sethideall(){
     document.getElementById("txt2img_settings").style="display:none !important";
@@ -101,8 +105,11 @@ function sethideall(){
     document.getElementById("txt2img_tools").style="display:none";
     document.getElementById("txt2img_styles_row").style="display:none";
     try{
-        document.getElementById("component-69").style="";
         document.getElementById("component-61").style="";
+        document.getElementById("component-63").style="";
+        document.getElementById("component-65").style="";
+        document.getElementById("component-67").style="";
+        document.getElementById("component-69").style="";
         document.getElementById("component-3301").style="";
     } catch(e){
         //alert(e);
