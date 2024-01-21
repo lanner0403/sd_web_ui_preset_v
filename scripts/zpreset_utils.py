@@ -117,8 +117,6 @@ class PresetManager(scripts.Script):
         # Initialize
         self.component_map = {k: None for k in self.available_components}
         self.size_component_map = {k:None for k in self.available_size_components}
-        print(self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None))
-        print(self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None))
         #self.additional_components = [x for x in self.additional_components_map] # acts like available_components list for additional components
 
         # combine defaults and choices
@@ -163,14 +161,68 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_size_qs_dd"
             )
 
+
+            #按鈕版
+            PresetManager.txt2img_preset1_btn = gr.Button(
+                value="快速",
+                label="Preset1",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_Preset1_btn"
+            )
+            PresetManager.txt2img_preset2_btn = gr.Button(
+                value="優質",
+                label="Preset2",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_Preset2_btn"
+            )
+            PresetManager.txt2img_preset3_btn = gr.Button(
+                value="極優",
+                label="Preset3",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_Preset3_btn"
+            )
+
+            PresetManager.txt2img_size1_btn = gr.Button(
+                value="寬",
+                label="Size1",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_size1_btn"
+            )
+            PresetManager.txt2img_size2_btn = gr.Button(
+                value="高",
+                label="Size2",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_size2_btn"
+            )
+            PresetManager.txt2img_size3_btn = gr.Button(
+                value="方",
+                label="Size3",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_size3_btn"
+            )
+            PresetManager.txt2img_prompt_btn = gr.Button(
+                value="隨機提詞",
+                label="randomprompt",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_prompt_btn"
+            )
+
         # instance level
         # quick set tab
         #self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
         #self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         #self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
-        self.hide_all_button = gr.Button(value="easy style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_hide_all_bttn")
-        self.show_all_button = gr.Button(value="nomal style", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_show_all_bttn")
 
+        self.hide_all_button = gr.Button(value="簡易版", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_hide_all_bttn")
+        self.show_all_button = gr.Button(value="一般版", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_show_all_bttn")
+        #self.random_button = gr.Button(value="隨機圖", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_random_bttn")
 
     def title(self):
         return "Presets"
@@ -195,19 +247,29 @@ class PresetManager(scripts.Script):
         #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
         #print(kwargs.get("label") == self.before_component_label, "TEST", kwargs.get("label"))
         #if kwargs.get("label") == self.before_component_label:
-            with gr.Accordion(label="Preset Manager", open = True, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
+            with gr.Accordion(label="簡易設定", open = True, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
+                #with gr.Row(equal_height = True):
+                    #if self.is_txt2img:
+                        #PresetManager.txt2img_preset_dropdown.render()
+                    #else:
+                        #PresetManager.img2img_preset_dropdown.render()
                 with gr.Row(equal_height = True):
-                    if self.is_txt2img:
-                        PresetManager.txt2img_preset_dropdown.render()
-                    else:
-                        PresetManager.img2img_preset_dropdown.render()
+                    PresetManager.txt2img_preset1_btn.render()
+                    PresetManager.txt2img_preset2_btn.render()
+                    PresetManager.txt2img_preset3_btn.render()
                     #with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_qs"):
                         #self.stackable_check.render()
+                #with gr.Row(equal_height = True):
+                    #PresetManager.txt2img_size_dropdown.render()
                 with gr.Row(equal_height = True):
-                    PresetManager.txt2img_size_dropdown.render()
+                    PresetManager.txt2img_size1_btn.render()
+                    PresetManager.txt2img_size2_btn.render()
+                    PresetManager.txt2img_size3_btn.render()
             with gr.Row(equal_height = True):
                 self.hide_all_button.render()
                 self.show_all_button.render()
+            with gr.Row(equal_height = True):
+                PresetManager.txt2img_prompt_btn.render()
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
@@ -234,6 +296,10 @@ class PresetManager(scripts.Script):
         if label in self.size_component_map:
             if self.size_component_map[label] is None:
                 self.size_component_map.update({component.label: component})
+        # 提示詞
+        if ele == "txt2img_prompt": 
+            self.prompt_component = component
+
         if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
             self._ui()
 
@@ -253,10 +319,38 @@ class PresetManager(scripts.Script):
                 inputs=[PresetManager.txt2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
-            PresetManager.txt2img_size_dropdown.change(
-                fn=self.fetch_valid_values_from_size,
-                inputs=[PresetManager.txt2img_size_dropdown] + [self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            #PresetManager.txt2img_size_dropdown.change(
+            #    fn=self.fetch_valid_values_from_size,
+            #    inputs=[PresetManager.txt2img_size_dropdown] + [self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            #    outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            #)
+            PresetManager.txt2img_preset1_btn.click(
+                fn=self.fetch_valid_values_from_preset1,
+                outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            ) 
+            PresetManager.txt2img_preset2_btn.click(
+                fn=self.fetch_valid_values_from_preset2,
+                outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            )    
+            PresetManager.txt2img_preset3_btn.click(
+                fn=self.fetch_valid_values_from_preset3,
+                outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            )               
+            PresetManager.txt2img_size1_btn.click(
+                fn=self.fetch_valid_values_from_size1,
                 outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            )
+            PresetManager.txt2img_size2_btn.click(
+                fn=self.fetch_valid_values_from_size2,
+                outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            )
+            PresetManager.txt2img_size3_btn.click(
+                fn=self.fetch_valid_values_from_size3,
+                outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
+            )
+            PresetManager.txt2img_prompt_btn.click(
+                fn=self.fetch_valid_values_from_prompt,
+                outputs=self.prompt_component
             )
         else:
             # Quick Set Tab
@@ -328,6 +422,101 @@ class PresetManager(scripts.Script):
                 else 
                     self.size_component_map[comp_name].value
                 for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
+    
+    #按鈕版
+    def fetch_valid_values_from_preset1(self):
+        return [
+            PresetManager.all_presets["Quick"][comp_name] 
+                if (comp_name in PresetManager.all_presets["Quick"] 
+                    and (
+                        True if not hasattr(self.component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.all_presets["Quick"][comp_name] in self.component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+    
+    def fetch_valid_values_from_preset2(self):
+        return [
+            PresetManager.all_presets["Better"][comp_name] 
+                if (comp_name in PresetManager.all_presets["Better"] 
+                    and (
+                        True if not hasattr(self.component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.all_presets["Better"][comp_name] in self.component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+    
+    def fetch_valid_values_from_preset3(self):
+        return [
+            PresetManager.all_presets["Great"][comp_name] 
+                if (comp_name in PresetManager.all_presets["Great"] 
+                    and (
+                        True if not hasattr(self.component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.all_presets["Great"][comp_name] in self.component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+    
+    def fetch_valid_values_from_size1(self):
+        return [
+            PresetManager.size_presets["Width"][comp_name] 
+                if (comp_name in PresetManager.size_presets["Width"] 
+                    and (
+                        True if not hasattr(self.size_component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.size_presets["Width"][comp_name] in self.size_component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.size_component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
+    
+    def fetch_valid_values_from_size2(self):
+        return [
+            PresetManager.size_presets["Height"][comp_name] 
+                if (comp_name in PresetManager.size_presets["Height"] 
+                    and (
+                        True if not hasattr(self.size_component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.size_presets["Height"][comp_name] in self.size_component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.size_component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
+    
+    def fetch_valid_values_from_size3(self):
+        return [
+            PresetManager.size_presets["Square"][comp_name] 
+                if (comp_name in PresetManager.size_presets["Square"] 
+                    and (
+                        True if not hasattr(self.size_component_map[comp_name], "choices") 
+                            else 
+                            True if PresetManager.size_presets["Square"][comp_name] in self.size_component_map[comp_name].choices 
+                                else False 
+                        ) 
+                    ) 
+                else 
+                    self.size_component_map[comp_name].value
+                for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
+    
+    def fetch_valid_values_from_prompt(self):
+        self.prompt_component.value = "nsfw++++,"
+        return self.prompt_component.value
  
 
     def local_request_restart(self):
