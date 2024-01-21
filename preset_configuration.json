@@ -25,10 +25,11 @@
 	"Checkpoint": "",
 	"Switch at": 0.3,
         "Sampling steps": 10,
-	"Enable ADetailer": false
+	"Enable ADetailer": false,
+	"ADetailer model": "face_yolov8n.pt"
     },
     "Quick": {
-	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
+	"Negative prompt": "(worst quality,low quality,censored:1.2),easynegative,NegfeetV2,bad-hands-5,EasyNegativeV2,an12",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
         "Height": 768,
@@ -53,10 +54,11 @@
 	"Checkpoint": "xxmix9realistic_v40.safetensors [18ed2b6c48]",
 	"Switch at": 0.7,
         "Sampling steps": 25,
-	"Enable ADetailer": false
+	"Enable ADetailer": false,
+	"ADetailer model": "face_yolov8n.pt"
     },
     "Better": {
-	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
+	"Negative prompt": "(worst quality,low quality,censored:1.3),easynegative,NegfeetV2,bad-hands-5,EasyNegativeV2,an12",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
         "Height": 768,
@@ -81,10 +83,11 @@
 	"Checkpoint": "xxmix9realistic_v40.safetensors [18ed2b6c48]",
 	"Switch at": 0.7,
         "Sampling steps": 35,
-	"Enable ADetailer": true
+	"Enable ADetailer": true,
+	"ADetailer model": "face_yolov8n.pt"
     },
     "Great": {
-	"Negative prompt": "worst quality,easynegative,EasyNegativeV2,",
+	"Negative prompt": "(worst quality,low quality,censored:1.4),easynegative,NegfeetV2,bad-hands-5,EasyNegativeV2,an12",
         "Sampling method": "DPM++ 2M SDE Heun Karras",
         "Width": 512,
         "Height": 768,
@@ -101,7 +104,7 @@
         "Batch size": 1,
         "CFG Scale": 7,
         "Hires. fix": true,
-        "Upscaler": "R-ESRGAN 4x+",
+        "Upscaler": "4xUltrasharp_4xUltrasharpV10",
         "Upscale by": 2,
 	"Denoising strength": 0.4,
 	"Hires steps": 10,
@@ -109,6 +112,7 @@
 	"Checkpoint": "xxmix9realistic_v40.safetensors [18ed2b6c48]",
 	"Switch at": 0.5,
         "Sampling steps": 40,
-	"Enable ADetailer": true
+	"Enable ADetailer": true,
+	"ADetailer model": "person_yolov8n-seg.pt"
     }
 }
