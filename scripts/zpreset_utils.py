@@ -1,3 +1,4 @@
+import random
 import gradio as gr
 import modules.sd_samplers
 import modules.scripts as scripts
@@ -123,6 +124,18 @@ class PresetManager(scripts.Script):
         #self.component_map = {**self.component_map, **self.additional_components_map}
         #self.available_components = self.available_components + self.additional_components
 
+        #色色大師設定
+        self.hmaster_keys1=0
+        self.hmaster_setting1=["","<lora:anis_nikke:1.2>","<lora:nikirabi:1.2>"]
+        
+        self.hmaster_setting2=0
+        self.hmaster_setting3=0
+        self.hmaster_setting4=0
+        self.hmaster_setting5=0
+        self.hmaster_setting6=0
+        self.hmaster_setting7=0
+        self.hmaster_setting8=0
+        self.hmaster_setting9=0
 
     
     def fakeinit(self, *args, **kwargs):
@@ -207,12 +220,43 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_size3_btn"
             )
             PresetManager.txt2img_prompt_btn = gr.Button(
-                value="隨機提詞",
-                label="randomprompt",
+                value="色色提詞",
+                label="hprompt",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_prompt_btn"
             )
+            PresetManager.txt2img_radom_prompt_btn = gr.Button(
+                value="隨機色色",
+                label="randomprompt",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_randomprompt_btn"
+            )
+
+            #h_m 人物
+            PresetManager.txt2img_s1_r_btn = gr.Button(
+                value="隨機",
+                label="0",
+                variant="secondary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_s1_r_btn"
+            )
+            PresetManager.txt2img_s1_1_btn = gr.Button(
+                value="妮姬-阿妮斯",
+                label="1",
+                variant="secondary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_s1_1_btn"
+            )
+            PresetManager.txt2img_s1_2_btn = gr.Button(
+                value="妮姬-拉毗",
+                label="2",
+                variant="secondary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_s1_2_btn"
+            )
+
 
         # instance level
         # quick set tab
@@ -270,6 +314,14 @@ class PresetManager(scripts.Script):
                 self.show_all_button.render()
             with gr.Row(equal_height = True):
                 PresetManager.txt2img_prompt_btn.render()
+                PresetManager.txt2img_radom_prompt_btn.render()
+            with gr.Accordion(label="色色設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_h_setting_accordion"):
+                with gr.Accordion(label="人物", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_h1_accordion"):
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_s1_r_btn.render()
+                        PresetManager.txt2img_s1_1_btn.render()
+                        PresetManager.txt2img_s1_2_btn.render()
+
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
@@ -348,8 +400,29 @@ class PresetManager(scripts.Script):
                 fn=self.fetch_valid_values_from_size3,
                 outputs=[self.size_component_map[comp_name] for comp_name in list(x for x in self.available_size_components if self.size_component_map[x] is not None)],
             )
+            #色色大師功能區
             PresetManager.txt2img_prompt_btn.click(
                 fn=self.fetch_valid_values_from_prompt,
+                outputs=self.prompt_component
+            )
+            PresetManager.txt2img_radom_prompt_btn.click(
+                fn=self.h_m_random_prompt,
+                outputs=self.prompt_component
+            )
+            #s1
+            PresetManager.txt2img_s1_r_btn.click(
+                fn=self.h_m_s1_setting,
+                inputs=PresetManager.txt2img_s1_r_btn,
+                outputs=self.prompt_component
+            )
+            PresetManager.txt2img_s1_1_btn.click(
+                fn=self.h_m_s1_setting,
+                inputs=PresetManager.txt2img_s1_1_btn,
+                outputs=self.prompt_component
+            )
+            PresetManager.txt2img_s1_2_btn.click(
+                fn=self.h_m_s1_setting,
+                inputs=PresetManager.txt2img_s1_2_btn,
                 outputs=self.prompt_component
             )
         else:
@@ -516,7 +589,22 @@ class PresetManager(scripts.Script):
     
     def fetch_valid_values_from_prompt(self):
         self.prompt_component.value = "nsfw++++,"
+        self.prompt_component.value += self.hmaster_setting1[self.hmaster_keys1]
         return self.prompt_component.value
+    
+    def h_m_random_prompt(self):
+        self.prompt_component.value = "nsfw++++,"
+        self.prompt_component.value += self.hmaster_setting1[random.randint(0,len(self.hmaster_setting1)-1)]
+        return self.prompt_component.value
+    
+    def h_m_s1_setting(self, obj):
+        print(obj)
+        self.hmaster_keys1 = random.randint(0,len(self.hmaster_setting1)-1)
+        #if(key == 0):
+            #self.hmaster_keys1 = random.randint(0,len(self.hmaster_setting1)-1)
+        #else:
+            #self.hmaster_keys1 = key
+        return self.fetch_valid_values_from_prompt()
  
 
     def local_request_restart(self):
