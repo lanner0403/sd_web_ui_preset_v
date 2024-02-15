@@ -86,6 +86,9 @@ class PresetManagerMover{
 setTimeout(() => {
     document.getElementById("preset-v_hide_all_bttn").addEventListener("click", sethideall);
     document.getElementById("preset-v_show_all_bttn").addEventListener("click", setshowall);
+    document.getElementById("preset-v_lock_seed_bttn").addEventListener("click", setlockseed);
+    document.getElementById("preset-v_rdn_seed_bttn").addEventListener("click", setrdnseed);
+    document.getElementById("preset-v_randomprompt_btn").addEventListener("click", startgenerate);
 }, 10000);
 
 setTimeout(() => {
@@ -128,6 +131,25 @@ function setshowall(){
     document.getElementById("component-69").style="";
     document.getElementById("component-61").style="";
     document.getElementById("component-3301").style="";
+}
+
+function setlockseed(){
+    document.getElementById("txt2img_reuse_seed").click();
+}
+
+function setrdnseed(){
+    document.getElementById("txt2img_random_seed").click();
+}
+
+var loadingtime = 5000;
+
+function startgenerate(){
+    document.getElementById("txt2img_generate").innerText = "等待中";
+    setTimeout(() => {
+        loadingtime = 2000
+        document.getElementById("txt2img_generate").click();
+        document.getElementById("txt2img_generate").innerText = "產生";
+    }, loadingtime);
 }
 
 //function move(){

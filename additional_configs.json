@@ -1,0 +1,17 @@
+{
+    "Width": 
+    {
+        "Width": 768,
+        "Height": 512
+   },
+    "Height": 
+    {
+        "Width": 512,
+        "Height": 768
+   },
+    "Square": 
+    {
+        "Width": 512,
+        "Height": 512
+   }
+}

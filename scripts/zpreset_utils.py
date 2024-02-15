@@ -1,3 +1,4 @@
+from cProfile import label
 import random
 import gradio as gr
 import modules.sd_samplers
@@ -10,6 +11,29 @@ from pprint import pprint
 from modules.ui import gr_show
 from collections import namedtuple
 from pathlib import Path
+
+
+def list_files_with_extension(folder_path, extension):
+    files = [os.path.splitext(f)[0] for f in os.listdir(folder_path) if f.endswith(extension)]
+    return files
+
+def convert_to_json(file_list, json_file_path):
+    data = {k:'<lora:' + k + ':1>' for k in file_list}
+    with open(json_file_path, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+
+# 設定資料夾路徑和要存放 JSON 檔案的路徑
+folder_path = 'C:\SD\sd.webui\sd.webui\webui\models\Lora\place'
+json_file_path = 'C:\SD\sd.webui\sd.webui\webui\extensions\sd_web_ui_preset_v\place.json'
+extension_to_filter = '.info'  # 設定要過濾的副檔名
+
+# 取得副檔名為 "info" 的檔案清單
+info_files_list = list_files_with_extension(folder_path, extension_to_filter)
+
+# 將檔案清單轉換成 JSON 並儲存
+#convert_to_json(info_files_list, json_file_path)
+
+#print(f"檔案已轉換為 {json_file_path}")
 
 #  *********     versioning     *****
 repo = None
@@ -125,18 +149,30 @@ class PresetManager(scripts.Script):
         #self.available_components = self.available_components + self.additional_components
 
         #色色大師設定
-        self.hmaster_keys1=0
-        self.hmaster_setting1=["","<lora:anis_nikke:1.2>","<lora:nikirabi:1.2>"]
-        
-        self.hmaster_setting2=0
-        self.hmaster_setting3=0
-        self.hmaster_setting4=0
-        self.hmaster_setting5=0
-        self.hmaster_setting6=0
-        self.hmaster_setting7=0
-        self.hmaster_setting8=0
-        self.hmaster_setting9=0
+        self.hm_config_1 = "hm_config_1.json"
+        self.hm_config_2 = "hm_config_2.json"
+        self.hm_config_3 = "hm_config_3.json"
+        self.hm_config_4 = "hm_config_4.json"
+        self.hm_config_5 = "hm_config_5.json"
+        self.hm_config_6 = "hm_config_6.json"
 
+        self.hm_config_1_component = self.get_config(self.hm_config_1)
+        self.hm_config_2_component = self.get_config(self.hm_config_2)
+        self.hm_config_3_component = self.get_config(self.hm_config_3)
+        self.hm_config_4_component = self.get_config(self.hm_config_4)
+        self.hm_config_5_component = self.get_config(self.hm_config_5)
+        self.hm_config_6_component = self.get_config(self.hm_config_6)
+
+        self.hm1prompt = ""
+        self.hm2prompt = ""
+        self.hm3prompt = ""
+        self.hm4prompt = ""
+        self.hm5prompt = ""
+        self.hm6prompt = ""
+        #隨機的face也要記下來 避免蓋掉
+        self.faceprompt = ""
+
+        self.allfuncprompt = ""
     
     def fakeinit(self, *args, **kwargs):
         """
@@ -220,7 +256,7 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_size3_btn"
             )
             PresetManager.txt2img_prompt_btn = gr.Button(
-                value="色色提詞",
+                value="自訂提詞",
                 label="hprompt",
                 variant="primary",
                 render = False,
@@ -235,27 +271,189 @@ class PresetManager(scripts.Script):
             )
 
             #h_m 人物
-            PresetManager.txt2img_s1_r_btn = gr.Button(
-                value="隨機",
-                label="0",
-                variant="secondary",
+            PresetManager.txt2img_hm1_dropdown = gr.Dropdown(
+                label="人物",
+                choices=list(self.hm_config_1_component.keys()),
                 render = False,
-                elem_id=f"{self.elm_prfx}_s1_r_btn"
+                elem_id=f"{self.elm_prfx}_hm1_dd"
             )
-            PresetManager.txt2img_s1_1_btn = gr.Button(
-                value="妮姬-阿妮斯",
-                label="1",
-                variant="secondary",
+
+            #h_m 姿勢
+            PresetManager.txt2img_hm2_dropdown = gr.Dropdown(
+                label="姿勢",
+                choices=list(self.hm_config_2_component.keys()),
                 render = False,
-                elem_id=f"{self.elm_prfx}_s1_1_btn"
+                elem_id=f"{self.elm_prfx}_hm2_dd"
             )
-            PresetManager.txt2img_s1_2_btn = gr.Button(
-                value="妮姬-拉毗",
-                label="2",
-                variant="secondary",
+
+            #h_m 場景
+            PresetManager.txt2img_hm3_dropdown = gr.Dropdown(
+                label="場景",
+                choices=list(self.hm_config_3_component.keys()),
                 render = False,
-                elem_id=f"{self.elm_prfx}_s1_2_btn"
+                elem_id=f"{self.elm_prfx}_hm3_dd"
             )
+
+            #h_m 衣服
+            PresetManager.txt2img_hm4_dropdown = gr.Dropdown(
+                label="衣服",
+                choices=list(self.hm_config_4_component.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_hm4_dd"
+            )
+
+            #h_m 表情
+            PresetManager.txt2img_hm5_dropdown = gr.Dropdown(
+                label="表情",
+                choices=list(self.hm_config_5_component.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_hm5_dd"
+            )
+
+            #h_m 細節
+            PresetManager.txt2img_hm6_dropdown = gr.Dropdown(
+                label="細節",
+                choices=list(self.hm_config_6_component.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_hm6_dd"
+            )
+
+            #隨機色色設定
+            PresetManager.randset1_chk =gr.Checkbox(
+                label="不使用人物lora",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_randset1_chk"
+            )
+            PresetManager.randset2_chk =gr.Checkbox(
+                label="不使用姿勢lora",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_randset2_chk"
+            )
+            PresetManager.randset3_chk =gr.Checkbox(
+                label="人物lora使用時，不使用衣服lora",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_randset3_chk"
+            )
+            PresetManager.randset4_chk =gr.Checkbox(
+                label="不使用場景lora",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_randset4_chk"
+            )
+
+            #功能性調節
+            PresetManager.func1_chk =gr.Checkbox(
+                label="climax",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func1_chk"
+            )
+            PresetManager.func2_chk =gr.Checkbox(
+                label="Hands",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func2_chk"
+            )
+            PresetManager.func3_chk =gr.Checkbox(
+                label="pussy",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func3_chk"
+            )
+            PresetManager.func4_chk =gr.Checkbox(
+                label="ass",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func4_chk"
+            )
+            PresetManager.func5_chk =gr.Checkbox(
+                label="nipples",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func5_chk"
+            )
+            PresetManager.func6_chk =gr.Checkbox(
+                label="thighs",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func6_chk"
+            )
+            PresetManager.func7_chk =gr.Checkbox(
+                label="skin",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func7_chk"
+            )
+            PresetManager.func8_chk =gr.Checkbox(
+                label="ugly bastard",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func8_chk"
+            )
+            PresetManager.func9_chk =gr.Checkbox(
+                label="more detail",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func9_chk"
+            )
+            PresetManager.func10_chk =gr.Checkbox(
+                label="less detail",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func10_chk"
+            )
+            PresetManager.func11_chk =gr.Checkbox(
+                label="quality",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func11_chk"
+            )
+            PresetManager.func12_chk =gr.Checkbox(
+                label="realistic",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func12_chk"
+            )
+            #後製
+            PresetManager.affunc1_chk =gr.Checkbox(
+                label="pussy",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_affunc1_chk"
+            )
+            PresetManager.affunc2_chk =gr.Checkbox(
+                label="ass",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_affunc2_chk"
+            )
+            PresetManager.affunc3_chk =gr.Checkbox(
+                label="breast",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_affunc3_chk"
+            )
+            PresetManager.affunc4_chk =gr.Checkbox(
+                label="pussy 2",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_affunc4_chk"
+            )
+            PresetManager.affunc5_chk =gr.Checkbox(
+                label="pubic hair",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_affunc5_chk"
+            )
+            #PresetManager.affunc6_chk =gr.Checkbox(
+            #    label="face",
+            #    render = False,
+            #    container = False,
+            #    elem_id=f"{self.elm_prfx}_affunc6_chk"
+            #)
 
 
         # instance level
@@ -266,7 +464,9 @@ class PresetManager(scripts.Script):
 
         self.hide_all_button = gr.Button(value="簡易版", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_hide_all_bttn")
         self.show_all_button = gr.Button(value="一般版", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_show_all_bttn")
-        #self.random_button = gr.Button(value="隨機圖", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_random_bttn")
+
+        self.lock_seed_button = gr.Button(value="鎖定seed", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_lock_seed_bttn")
+        self.rdn_seed_button = gr.Button(value="隨機seed", variant="primary", render=False, visible=True, elem_id=f"{self.elm_prfx}_rdn_seed_bttn")
 
     def title(self):
         return "Presets"
@@ -316,11 +516,54 @@ class PresetManager(scripts.Script):
                 PresetManager.txt2img_prompt_btn.render()
                 PresetManager.txt2img_radom_prompt_btn.render()
             with gr.Accordion(label="色色設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_h_setting_accordion"):
-                with gr.Accordion(label="人物", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_h1_accordion"):
-                    with gr.Row(equal_height = True):
-                        PresetManager.txt2img_s1_r_btn.render()
-                        PresetManager.txt2img_s1_1_btn.render()
-                        PresetManager.txt2img_s1_2_btn.render()
+                with gr.Accordion(label="隨機設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_randh_setting_accordion"):
+                    PresetManager.randset1_chk.render()
+                    PresetManager.randset2_chk.render()
+                    PresetManager.randset3_chk.render()
+                    PresetManager.randset4_chk.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm1_dropdown.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm2_dropdown.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm3_dropdown.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm4_dropdown.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm5_dropdown.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.txt2img_hm6_dropdown.render() 
+            with gr.Accordion(label="細節設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_f_setting_accordion"):
+                with gr.Row(equal_height = True):
+                    PresetManager.func1_chk.render()
+                    PresetManager.func2_chk.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.func3_chk.render() 
+                    PresetManager.func4_chk.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.func5_chk.render()
+                    PresetManager.func6_chk.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.func7_chk.render() 
+                    PresetManager.func8_chk.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.func9_chk.render() 
+                    PresetManager.func10_chk.render() 
+                with gr.Row(equal_height = True):
+                    PresetManager.func11_chk.render() 
+                    PresetManager.func12_chk.render() 
+            with gr.Accordion(label="後製設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_af_setting_accordion"):
+                with gr.Row(equal_height = True):
+                    self.lock_seed_button.render()
+                    self.rdn_seed_button.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.affunc1_chk.render()
+                    PresetManager.affunc2_chk.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.affunc3_chk.render() 
+                    PresetManager.affunc4_chk.render()
+                with gr.Row(equal_height = True):
+                    PresetManager.affunc5_chk.render()
 
 
     def after_component(self, component, **kwargs):
@@ -334,7 +577,7 @@ class PresetManager(scripts.Script):
                                       )
             #if hasattr(component, "label"):
                 #print(f"label:{component.label}")
-            #elif hasattr(component, "elem_id"):
+            #if hasattr(component, "elem_id"):
                 #print(f"elem_id:{component.elem_id}")
 
         label = kwargs.get("label")
@@ -345,6 +588,8 @@ class PresetManager(scripts.Script):
             #!Hack to remove conflict between main Prompt and hr Prompt
             if self.component_map[label] is None:
                 self.component_map.update({component.label: component})
+
+
         if label in self.size_component_map:
             if self.size_component_map[label] is None:
                 self.size_component_map.update({component.label: component})
@@ -407,24 +652,129 @@ class PresetManager(scripts.Script):
             )
             PresetManager.txt2img_radom_prompt_btn.click(
                 fn=self.h_m_random_prompt,
+                inputs=[PresetManager.randset1_chk,PresetManager.randset2_chk,PresetManager.randset3_chk,PresetManager.randset4_chk],
                 outputs=self.prompt_component
             )
-            #s1
-            PresetManager.txt2img_s1_r_btn.click(
-                fn=self.h_m_s1_setting,
-                inputs=PresetManager.txt2img_s1_r_btn,
+            #hm
+            PresetManager.txt2img_hm1_dropdown.change(
+                fn=self.hm1_setting,
+                inputs=[PresetManager.txt2img_hm1_dropdown,self.prompt_component],
                 outputs=self.prompt_component
             )
-            PresetManager.txt2img_s1_1_btn.click(
-                fn=self.h_m_s1_setting,
-                inputs=PresetManager.txt2img_s1_1_btn,
+            PresetManager.txt2img_hm2_dropdown.change(
+                fn=self.hm2_setting,
+                inputs=[PresetManager.txt2img_hm2_dropdown,self.prompt_component],
                 outputs=self.prompt_component
             )
-            PresetManager.txt2img_s1_2_btn.click(
-                fn=self.h_m_s1_setting,
-                inputs=PresetManager.txt2img_s1_2_btn,
+            PresetManager.txt2img_hm3_dropdown.change(
+                fn=self.hm3_setting,
+                inputs=[PresetManager.txt2img_hm3_dropdown,self.prompt_component],
                 outputs=self.prompt_component
             )
+            PresetManager.txt2img_hm4_dropdown.change(
+                fn=self.hm4_setting,
+                inputs=[PresetManager.txt2img_hm4_dropdown,self.prompt_component],
+                outputs=self.prompt_component
+            )
+            PresetManager.txt2img_hm5_dropdown.change(
+                fn=self.hm5_setting,
+                inputs=[PresetManager.txt2img_hm5_dropdown,self.prompt_component],
+                outputs=self.prompt_component
+            )
+            PresetManager.txt2img_hm6_dropdown.change(
+                fn=self.hm6_setting,
+                inputs=[PresetManager.txt2img_hm6_dropdown, self.prompt_component],
+                outputs=self.prompt_component
+            )
+            #細節功能
+            detailinput = [self.prompt_component,PresetManager.func1_chk,PresetManager.func2_chk,PresetManager.func3_chk,PresetManager.func4_chk,PresetManager.func5_chk,PresetManager.func6_chk,PresetManager.func7_chk,PresetManager.func8_chk,PresetManager.func9_chk,PresetManager.func10_chk,PresetManager.func11_chk,PresetManager.func12_chk]
+            PresetManager.func1_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func2_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func3_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func4_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func5_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func6_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func7_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func8_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func9_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func10_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func11_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func12_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            #後製功能
+            PresetManager.affunc1_chk.change(
+                fn=self.affunc_setting,
+                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            )
+            PresetManager.affunc2_chk.change(
+                fn=self.affunc_setting,
+                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            )
+            PresetManager.affunc3_chk.change(
+                fn=self.affunc_setting,
+                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            )
+            PresetManager.affunc4_chk.change(
+                fn=self.affunc_setting,
+                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            )
+            PresetManager.affunc5_chk.change(
+                fn=self.affunc_setting,
+                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            )
+
         else:
             # Quick Set Tab
             PresetManager.img2img_preset_dropdown.change(
@@ -587,28 +937,228 @@ class PresetManager(scripts.Script):
                     self.size_component_map[comp_name].value
                 for i, comp_name in enumerate(list(x for x in self.available_size_components if self.size_component_map[x] is not None and hasattr(self.size_component_map[x], "value")))]
     
+    #自訂提詞
     def fetch_valid_values_from_prompt(self):
         self.prompt_component.value = "nsfw++++,"
-        self.prompt_component.value += self.hmaster_setting1[self.hmaster_keys1]
+        self.prompt_component.value += self.hm1prompt
+        self.prompt_component.value += self.hm2prompt
+        self.prompt_component.value += self.hm3prompt
+        self.prompt_component.value += self.hm4prompt
+        self.prompt_component.value += self.hm5prompt
+        self.prompt_component.value += self.hm6prompt
+        self.prompt_component.value += self.allfuncprompt
         return self.prompt_component.value
     
-    def h_m_random_prompt(self):
+    #隨機
+    def h_m_random_prompt(self,rs1,rs2,rs3,rs4):
         self.prompt_component.value = "nsfw++++,"
-        self.prompt_component.value += self.hmaster_setting1[random.randint(0,len(self.hmaster_setting1)-1)]
+        chruse = False
+        if(self.hm1prompt==""):
+            if(rs1 == False):
+                if(random.randint(0,100) > 50):
+                    self.prompt_component.value += self.hm_config_1_component[list(self.hm_config_1_component)[random.randint(0,len(self.hm_config_1_component)-1)]] + ","
+                    chruse = True
+        else:
+            self.prompt_component.value += self.hm1prompt
+        
+        if(self.hm2prompt==""):
+            if(rs2 == False):
+                self.prompt_component.value += self.hm_config_2_component[list(self.hm_config_2_component)[random.randint(0,len(self.hm_config_2_component)-1)]] + ","
+            else:
+                self.prompt_component.value += self.hm_config_2_component[list(self.hm_config_2_component)[random.randint(0,10)]] + ","
+        else:
+            self.prompt_component.value += self.hm2prompt
+        print(rs4)
+        print(len(self.hm_config_3_component))
+
+        if(self.hm3prompt==""):
+            if(rs4 == False):
+                rnd3 = random.randint(0,100)
+                if(rnd3 > 80):
+                    self.prompt_component.value += "indoor,"
+                elif(rnd3 > 60):
+                    self.prompt_component.value += "outdoor,"
+                elif(rnd3 > 20):
+                    self.prompt_component.value += self.hm_config_3_component[list(self.hm_config_3_component)[random.randint(0,len(self.hm_config_3_component)-1)]] + ","
+        else:
+            self.prompt_component.value += self.hm3prompt
+        
+        if(self.hm4prompt==""):
+            if(chruse):
+                if(rs3):
+                    self.prompt_component.value +=""
+                else:
+                    if(random.randint(0,100) > 50):
+                        self.prompt_component.value += self.hm_config_4_component[list(self.hm_config_4_component)[random.randint(0,len(self.hm_config_4_component)-1)]] + ","
+                    else:
+                        self.prompt_component.value += "nude+++,"
+        else:
+            self.prompt_component.value += self.hm4prompt
+
+        #AD用的  避免臉跑掉
+        self.faceprompt=""
+        if(self.hm5prompt==""):
+            #前25個後面太奇怪了
+            if(random.randint(0,100) > 50):
+                self.faceprompt = self.hm_config_5_component[list(self.hm_config_5_component)[random.randint(0,25)]] + ","
+                self.prompt_component.value += self.faceprompt
+        else:
+            self.prompt_component.value += self.hm5prompt
+            self.faceprompt = self.hm5prompt
+
+        #隨機 不使用 其他
+        if(self.hm6prompt==""):
+            self.prompt_component.value += ""
+            #self.prompt_component.value += self.hm_config_6_component[list(self.hm_config_6_component)[random.randint(0,2)]] + ","
+        else:
+            self.prompt_component.value += self.hm6prompt
+
+        self.prompt_component.value += self.allfuncprompt
+
         return self.prompt_component.value
     
-    def h_m_s1_setting(self, obj):
-        print(obj)
-        self.hmaster_keys1 = random.randint(0,len(self.hmaster_setting1)-1)
-        #if(key == 0):
-            #self.hmaster_keys1 = random.randint(0,len(self.hmaster_setting1)-1)
-        #else:
-            #self.hmaster_keys1 = key
-        return self.fetch_valid_values_from_prompt()
- 
+    #自訂1
+    def hm1_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm1prompt
+        self.hm1prompt = ""
+        if(selection != "random"):
+            self.hm1prompt = self.hm_config_1_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm1prompt)
+        else:
+            oldprompt += "," + self.hm1prompt
+        return oldprompt
+
+    #自訂2
+    def hm2_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm2prompt
+        self.hm2prompt = ""
+        if(selection != "random"):
+            self.hm2prompt = self.hm_config_2_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm2prompt)
+        else:
+            oldprompt += "," + self.hm2prompt
+        return oldprompt
+
+    #自訂3
+    def hm3_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm3prompt
+        self.hm3prompt = ""
+        if(selection != "random"):
+            self.hm3prompt = self.hm_config_3_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm3prompt)
+        else:
+            oldprompt += "," + self.hm3prompt
+        return oldprompt
+
+    #自訂4
+    def hm4_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm4prompt
+        self.hm4prompt = ""
+        if(selection != "random"):
+            self.hm4prompt = self.hm_config_4_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm4prompt)
+        else:
+            oldprompt += "," + self.hm4prompt
+        return oldprompt
+
+    #自訂5
+    def hm5_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm5prompt
+        self.hm5prompt = ""
+        if(selection != "random"):
+            self.hm5prompt = self.hm_config_5_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm5prompt)
+        else:
+            oldprompt += "," + self.hm5prompt
+        return oldprompt
+
+    #自訂6
+    def hm6_setting(self, selection, oldprompt):
+        oldhmprompt = self.hm6prompt
+        self.hm6prompt = ""
+        if(selection != "random"):
+            self.hm6prompt = self.hm_config_6_component[selection] + ","
+        if(oldhmprompt!=""):
+            oldprompt = oldprompt.replace(oldhmprompt, self.hm6prompt)
+        else:
+            oldprompt += "," + self.hm6prompt
+        return oldprompt
+    
+    #細節
+    def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12):
+        self.allfuncprompt = ""
+        oldprompt = oldprompt.replace("(Girl trembling with sexual climax)++,", "")
+        oldprompt = oldprompt.replace("<lyco:GoodHands-beta2:1.4>,", "")
+        oldprompt = oldprompt.replace("<lora:gape_cpt_v04.10:0.6>,", "")
+        oldprompt = oldprompt.replace("<lora:AGFIN:0.8>,AG,", "")
+        oldprompt = oldprompt.replace("<lora:BigBeautifulNipples_v1:1>,", "")
+        oldprompt = oldprompt.replace("thick thighs,", "")
+        oldprompt = oldprompt.replace("<lora:Shinyskin-000018:0.6>,", "")
+        oldprompt = oldprompt.replace("<lora:ugly_bastard_v5.4a:1.5>,", "")
+        oldprompt = oldprompt.replace("OverallDetail++,", "")
+        oldprompt = oldprompt.replace("<lora:add_detail:0.2>,", "")
+        oldprompt = oldprompt.replace("(masterpiece,best quality:1.4),", "")
+        oldprompt = oldprompt.replace("RAW photo,realistic,", "")
+
+        if(fv1):
+            self.allfuncprompt += "(Girl trembling with sexual climax)++,"
+        if(fv2):
+            self.allfuncprompt += "<lyco:GoodHands-beta2:1.4>,"
+        if(fv3):
+            self.allfuncprompt += "<lora:gape_cpt_v04.10:0.6>,"
+        if(fv4):
+            self.allfuncprompt += "<lora:AGFIN:0.8>,AG,"
+        if(fv5):
+            self.allfuncprompt += "<lora:BigBeautifulNipples_v1:1>,"
+        if(fv6):
+            self.allfuncprompt += "thick thighs,"
+        if(fv7):
+            self.allfuncprompt += "<lora:Shinyskin-000018:0.6>,"
+        if(fv8):
+            self.allfuncprompt += "<lora:ugly_bastard_v5.4a:1.5>,"
+        if(fv9):
+            self.allfuncprompt += "OverallDetail++,"
+        if(fv10):
+            self.allfuncprompt += "<lora:add_detail:0.2>,"
+        if(fv11):
+            self.allfuncprompt += "(masterpiece,best quality:1.4),"
+        if(fv12):
+            self.allfuncprompt += "RAW photo,realistic,"
+        oldprompt += self.allfuncprompt
+        return oldprompt
+    
+    #後製
+    def affunc_setting(self, oldprompt,afv1,afv2,afv3,afv4,afv5):
+        isuse = False
+        model1 = "None"
+        mprompt1 = ""
+        if(afv1 or afv2 or afv3 or afv4 or afv5):
+            isuse = True
+            model1 = "person_yolov8n-seg.pt"
+
+        mprompt1 += self.faceprompt
+        if(afv1):
+            mprompt1 += "<lora:Pussy_Lotte_v5n:0.8>,pussy"
+        if(afv2):
+            mprompt1 += "lora:AGFIN:0.8>,AG,"
+        if(afv3):
+            mprompt1 += "<lora:BigBeautifulNipples_v1:1>,"
+        if(afv4):
+            mprompt1 += "<lora:pussy:1.2>,pussy,"
+        if(afv5):
+            mprompt1 += "pubic hair,"
+        return [isuse,model1,mprompt1]
+    
 
     def local_request_restart(self):
         "Restart button"
         shared.state.interrupt()
         shared.state.need_restart = True
+
+
 
