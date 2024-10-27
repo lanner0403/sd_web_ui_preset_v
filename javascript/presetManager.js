@@ -88,7 +88,8 @@ setTimeout(() => {
     document.getElementById("preset-v_show_all_bttn").addEventListener("click", setshowall);
     document.getElementById("preset-v_lock_seed_bttn").addEventListener("click", setlockseed);
     document.getElementById("preset-v_rdn_seed_bttn").addEventListener("click", setrdnseed);
-    document.getElementById("preset-v_randomprompt_btn").addEventListener("click", startgenerate);
+    //不使用直接產生
+    //document.getElementById("preset-v_randomprompt_btn").addEventListener("click", startgenerate);
 }, 10000);
 
 setTimeout(() => {

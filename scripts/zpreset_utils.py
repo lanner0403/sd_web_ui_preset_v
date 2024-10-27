@@ -7,6 +7,8 @@ from modules import shared
 import json
 import os
 import shutil
+import requests
+import textwrap
 from pprint import pprint
 from modules.ui import gr_show
 from collections import namedtuple
@@ -156,12 +158,16 @@ class PresetManager(scripts.Script):
         self.hm_config_5 = "hm_config_5.json"
         self.hm_config_6 = "hm_config_6.json"
 
+        self.localizations = "localizations\zh_TW.json"
+
         self.hm_config_1_component = self.get_config(self.hm_config_1)
         self.hm_config_2_component = self.get_config(self.hm_config_2)
         self.hm_config_3_component = self.get_config(self.hm_config_3)
         self.hm_config_4_component = self.get_config(self.hm_config_4)
         self.hm_config_5_component = self.get_config(self.hm_config_5)
         self.hm_config_6_component = self.get_config(self.hm_config_6)
+        
+        self.localizations_component = self.get_config2(self.localizations)
 
         self.hm1prompt = ""
         self.hm2prompt = ""
@@ -169,10 +175,25 @@ class PresetManager(scripts.Script):
         self.hm4prompt = ""
         self.hm5prompt = ""
         self.hm6prompt = ""
+
+        #text value
+        self.hm1btntext = ""
+        self.hm2btntext = ""
+        self.hm3btntext = ""
+        self.hm4btntext = ""
+
+        self.locked1 = ""
+        self.locked2 = ""
+        self.locked3 = ""
+        self.locked4 = ""
+
         #隨機的face也要記下來 避免蓋掉
         self.faceprompt = ""
 
         self.allfuncprompt = ""
+
+        #前一次的 cprompt
+        self.oldcprompt=""
     
     def fakeinit(self, *args, **kwargs):
         """
@@ -256,7 +277,7 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_size3_btn"
             )
             PresetManager.txt2img_prompt_btn = gr.Button(
-                value="自訂提詞",
+                value="使用自訂提詞",
                 label="hprompt",
                 variant="primary",
                 render = False,
@@ -382,41 +403,48 @@ class PresetManager(scripts.Script):
                 elem_id=f"{self.elm_prfx}_func6_chk"
             )
             PresetManager.func7_chk =gr.Checkbox(
-                label="skin",
+                label="body",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func7_chk"
             )
             PresetManager.func8_chk =gr.Checkbox(
-                label="ugly bastard",
+                label="skin",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func8_chk"
             )
             PresetManager.func9_chk =gr.Checkbox(
-                label="more detail",
+                label="ugly bastard",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func9_chk"
             )
             PresetManager.func10_chk =gr.Checkbox(
-                label="less detail",
+                label="more detail",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func10_chk"
             )
             PresetManager.func11_chk =gr.Checkbox(
-                label="quality",
+                label="less detail",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func11_chk"
             )
             PresetManager.func12_chk =gr.Checkbox(
-                label="realistic",
+                label="quality",
                 render = False,
                 container = False,
                 elem_id=f"{self.elm_prfx}_func12_chk"
             )
+            PresetManager.func13_chk =gr.Checkbox(
+                label="realistic",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func13_chk"
+            )
+
             #後製
             PresetManager.affunc1_chk =gr.Checkbox(
                 label="pussy",
@@ -455,6 +483,39 @@ class PresetManager(scripts.Script):
             #    elem_id=f"{self.elm_prfx}_affunc6_chk"
             #)
 
+            #鎖定
+            PresetManager.txt2img_lock1_btn = gr.Button(
+                value="",
+                label="lock1",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_lock1_btn"
+            )
+            PresetManager.txt2img_lock2_btn = gr.Button(
+                value="",
+                label="lock2",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_lock2_btn"
+            )
+            PresetManager.txt2img_lock3_btn = gr.Button(
+                value="",
+                label="lock3",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_lock3_btn"
+            )
+            #中文輸入框
+            PresetManager.txt2img_cprompt_txt = gr.Textbox(lines=4, placeholder="可輸入中文描述", label="Ollama Prompt", elem_id=f"{self.elm_prfx}_cprompt_txt")
+            PresetManager.txt2img_cprompt_btn = gr.Button(
+                value="送出",
+                label="cpromptbtn",
+                variant="primary",
+                render = False,
+                elem_id=f"{self.elm_prfx}_cprompt_btn"
+            )
+
+        self.input_prompt = PresetManager.txt2img_cprompt_txt
 
         # instance level
         # quick set tab
@@ -514,57 +575,68 @@ class PresetManager(scripts.Script):
                 self.show_all_button.render()
             with gr.Row(equal_height = True):
                 PresetManager.txt2img_prompt_btn.render()
-                PresetManager.txt2img_radom_prompt_btn.render()
             with gr.Accordion(label="色色設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_h_setting_accordion"):
+                with gr.Accordion(label="提詞設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_prompt_setting_accordion"):
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm1_dropdown.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm2_dropdown.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm3_dropdown.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm4_dropdown.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm5_dropdown.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.txt2img_hm6_dropdown.render() 
                 with gr.Accordion(label="隨機設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_randh_setting_accordion"):
                     PresetManager.randset1_chk.render()
                     PresetManager.randset2_chk.render()
                     PresetManager.randset3_chk.render()
                     PresetManager.randset4_chk.render()
+                with gr.Accordion(label="細節設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_f_setting_accordion"):
+                    with gr.Row(equal_height = True):
+                        PresetManager.func1_chk.render()
+                        PresetManager.func2_chk.render()
+                    with gr.Row(equal_height = True):
+                        PresetManager.func3_chk.render() 
+                        PresetManager.func4_chk.render()
+                    with gr.Row(equal_height = True):
+                        PresetManager.func5_chk.render()
+                        PresetManager.func6_chk.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.func7_chk.render() 
+                        PresetManager.func8_chk.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.func9_chk.render() 
+                        PresetManager.func10_chk.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.func11_chk.render() 
+                        PresetManager.func12_chk.render() 
+                    with gr.Row(equal_height = True):
+                        PresetManager.func13_chk.render() 
+                #with gr.Accordion(label="後製設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_af_setting_accordion"):
+                    #with gr.Row(equal_height = True):
+                        #self.lock_seed_button.render()
+                        #self.rdn_seed_button.render()
+                    #with gr.Row(equal_height = True):
+                        #PresetManager.affunc1_chk.render()
+                        #PresetManager.affunc2_chk.render()
+                    #with gr.Row(equal_height = True):
+                        #PresetManager.affunc3_chk.render() 
+                        #PresetManager.affunc4_chk.render()
+                    #with gr.Row(equal_height = True):
+                        #PresetManager.affunc5_chk.render()
+            with gr.Accordion(label="鎖定[人物][姿勢]", open = True, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_lock_accordion"):
                 with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm1_dropdown.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm2_dropdown.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm3_dropdown.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm4_dropdown.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm5_dropdown.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.txt2img_hm6_dropdown.render() 
-            with gr.Accordion(label="細節設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_f_setting_accordion"):
-                with gr.Row(equal_height = True):
-                    PresetManager.func1_chk.render()
-                    PresetManager.func2_chk.render()
-                with gr.Row(equal_height = True):
-                    PresetManager.func3_chk.render() 
-                    PresetManager.func4_chk.render()
-                with gr.Row(equal_height = True):
-                    PresetManager.func5_chk.render()
-                    PresetManager.func6_chk.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.func7_chk.render() 
-                    PresetManager.func8_chk.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.func9_chk.render() 
-                    PresetManager.func10_chk.render() 
-                with gr.Row(equal_height = True):
-                    PresetManager.func11_chk.render() 
-                    PresetManager.func12_chk.render() 
-            with gr.Accordion(label="後製設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_af_setting_accordion"):
-                with gr.Row(equal_height = True):
-                    self.lock_seed_button.render()
-                    self.rdn_seed_button.render()
-                with gr.Row(equal_height = True):
-                    PresetManager.affunc1_chk.render()
-                    PresetManager.affunc2_chk.render()
-                with gr.Row(equal_height = True):
-                    PresetManager.affunc3_chk.render() 
-                    PresetManager.affunc4_chk.render()
-                with gr.Row(equal_height = True):
-                    PresetManager.affunc5_chk.render()
-
+                    PresetManager.txt2img_lock1_btn.render()
+                    PresetManager.txt2img_lock2_btn.render()
+            with gr.Row(equal_height = True):
+                PresetManager.txt2img_radom_prompt_btn.render()
+            with gr.Row(equal_height = True):
+                PresetManager.txt2img_cprompt_txt.render()
+            with gr.Row(equal_height = True):
+                PresetManager.txt2img_cprompt_btn.render()
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
@@ -602,7 +674,6 @@ class PresetManager(scripts.Script):
 
         if ele == "txt2img_styles_dialog":
             self._before_component("")
-            
 
     def ui(self, *args):
         pass
@@ -653,18 +724,18 @@ class PresetManager(scripts.Script):
             PresetManager.txt2img_radom_prompt_btn.click(
                 fn=self.h_m_random_prompt,
                 inputs=[PresetManager.randset1_chk,PresetManager.randset2_chk,PresetManager.randset3_chk,PresetManager.randset4_chk],
-                outputs=self.prompt_component
+                outputs=[self.prompt_component, PresetManager.txt2img_lock1_btn, PresetManager.txt2img_lock2_btn]
             )
             #hm
             PresetManager.txt2img_hm1_dropdown.change(
                 fn=self.hm1_setting,
                 inputs=[PresetManager.txt2img_hm1_dropdown,self.prompt_component],
-                outputs=self.prompt_component
+                outputs=[self.prompt_component, PresetManager.txt2img_lock1_btn]
             )
             PresetManager.txt2img_hm2_dropdown.change(
                 fn=self.hm2_setting,
                 inputs=[PresetManager.txt2img_hm2_dropdown,self.prompt_component],
-                outputs=self.prompt_component
+                outputs=[self.prompt_component, PresetManager.txt2img_lock2_btn]
             )
             PresetManager.txt2img_hm3_dropdown.change(
                 fn=self.hm3_setting,
@@ -687,7 +758,7 @@ class PresetManager(scripts.Script):
                 outputs=self.prompt_component
             )
             #細節功能
-            detailinput = [self.prompt_component,PresetManager.func1_chk,PresetManager.func2_chk,PresetManager.func3_chk,PresetManager.func4_chk,PresetManager.func5_chk,PresetManager.func6_chk,PresetManager.func7_chk,PresetManager.func8_chk,PresetManager.func9_chk,PresetManager.func10_chk,PresetManager.func11_chk,PresetManager.func12_chk]
+            detailinput = [self.prompt_component,PresetManager.func1_chk,PresetManager.func2_chk,PresetManager.func3_chk,PresetManager.func4_chk,PresetManager.func5_chk,PresetManager.func6_chk,PresetManager.func7_chk,PresetManager.func8_chk,PresetManager.func9_chk,PresetManager.func10_chk,PresetManager.func11_chk,PresetManager.func12_chk,PresetManager.func13_chk]
             PresetManager.func1_chk.change(
                 fn=self.func_setting,
                 inputs=detailinput,
@@ -748,33 +819,53 @@ class PresetManager(scripts.Script):
                 inputs=detailinput,
                 outputs=self.prompt_component
             )
+            PresetManager.func13_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
             #後製功能
-            PresetManager.affunc1_chk.change(
-                fn=self.affunc_setting,
-                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
-                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #PresetManager.affunc1_chk.change(
+                #fn=self.affunc_setting,
+                #inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                #outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #)
+            #PresetManager.affunc2_chk.change(
+                #fn=self.affunc_setting,
+                #inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                #outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #)
+            #PresetManager.affunc3_chk.change(
+                #fn=self.affunc_setting,
+                #inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                #outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #)
+            #PresetManager.affunc4_chk.change(
+                #fn=self.affunc_setting,
+                #inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                #outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #)
+            #PresetManager.affunc5_chk.change(
+                #fn=self.affunc_setting,
+                #inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
+                #outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
+            #)
+            #鎖定
+            PresetManager.txt2img_lock1_btn.click(
+                fn=self.prompt_lock1,
+                outputs=[PresetManager.txt2img_hm1_dropdown, PresetManager.txt2img_lock1_btn]
+            ) 
+            PresetManager.txt2img_lock2_btn.click(
+                fn=self.prompt_lock2,
+                outputs=[PresetManager.txt2img_hm2_dropdown, PresetManager.txt2img_lock2_btn]
             )
-            PresetManager.affunc2_chk.change(
-                fn=self.affunc_setting,
-                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
-                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
-            )
-            PresetManager.affunc3_chk.change(
-                fn=self.affunc_setting,
-                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
-                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
-            )
-            PresetManager.affunc4_chk.change(
-                fn=self.affunc_setting,
-                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
-                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
-            )
-            PresetManager.affunc5_chk.change(
-                fn=self.affunc_setting,
-                inputs=[self.component_map["ad_prompt"],PresetManager.affunc1_chk,PresetManager.affunc2_chk,PresetManager.affunc3_chk,PresetManager.affunc4_chk,PresetManager.affunc5_chk],
-                outputs=[self.component_map["Enable ADetailer"],self.component_map["ADetailer model"],self.component_map["ad_prompt"]]
-            )
-
+            #ai輸出
+            #self.input_prompt.change(self.input_prompt, self.input_prompt, None)
+            PresetManager.txt2img_cprompt_btn.click(
+                fn=self.cprompt_send,
+                inputs=[self.prompt_component, self.input_prompt],
+                outputs=self.prompt_component
+            )  
         else:
             # Quick Set Tab
             PresetManager.img2img_preset_dropdown.change(
@@ -806,6 +897,15 @@ class PresetManager(scripts.Script):
         file = os.path.join(PresetManager.BASEDIR, path)
         try:
             with open(file, open_mode) as f:
+                as_dict = json.load(f) 
+        except FileNotFoundError as e:
+            print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
+        return as_dict 
+    
+    def get_config2(self, path, open_mode='r'):
+        file = os.path.join(PresetManager.BASEDIR, path)
+        try:
+            with open(file, open_mode, encoding='utf-8') as f:
                 as_dict = json.load(f) 
         except FileNotFoundError as e:
             print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
@@ -953,23 +1053,57 @@ class PresetManager(scripts.Script):
     def h_m_random_prompt(self,rs1,rs2,rs3,rs4):
         self.prompt_component.value = "nsfw++++,"
         chruse = False
-        if(self.hm1prompt==""):
-            if(rs1 == False):
-                if(random.randint(0,100) > 50):
-                    self.prompt_component.value += self.hm_config_1_component[list(self.hm_config_1_component)[random.randint(0,len(self.hm_config_1_component)-1)]] + ","
-                    chruse = True
+        btn1text = ""
+        btn2text = ""
+
+        if(self.locked1 == ""):
+            self.hm1btntext = ""
+            if(self.hm1prompt==""):
+                if(rs1 == False):
+                    if(random.randint(0,100) > 20):
+                        self.hm1btntext = list(self.hm_config_1_component)[random.randint(0,len(self.hm_config_1_component)-1)]
+                        try:
+                            btn1text = self.localizations_component[self.hm1btntext]
+                        except:
+                            btn1text = self.hm1btntext
+                        self.prompt_component.value += self.hm_config_1_component[self.hm1btntext] + ","
+                        chruse = True
+            else:
+                self.prompt_component.value += self.hm1prompt
         else:
             self.prompt_component.value += self.hm1prompt
-        
-        if(self.hm2prompt==""):
-            if(rs2 == False):
-                self.prompt_component.value += self.hm_config_2_component[list(self.hm_config_2_component)[random.randint(0,len(self.hm_config_2_component)-1)]] + ","
+            btn1text = "鎖定:"
+            try:
+                btn1text += self.localizations_component[self.hm1btntext]
+            except:
+                btn1text += self.hm1btntext
+
+        if(self.locked2 == ""):
+            self.hm2btntext = ""
+            if(self.hm2prompt==""):
+                if(rs2 == False):
+                    self.hm2btntext = list(self.hm_config_2_component)[random.randint(0,len(self.hm_config_2_component)-1)]
+                    try:
+                        btn2text = self.localizations_component[self.hm2btntext]
+                    except:
+                        btn2text = self.hm2btntext
+                    self.prompt_component.value += self.hm_config_2_component[self.hm2btntext] + ","
+                else:
+                    self.hm2btntext = list(self.hm_config_2_component)[random.randint(0,10)]
+                    try:
+                        btn2text = self.localizations_component[self.hm2btntext]
+                    except:
+                        btn2text = self.hm2btntext
+                    self.prompt_component.value += self.hm_config_2_component[self.hm2btntext] + ","
             else:
-                self.prompt_component.value += self.hm_config_2_component[list(self.hm_config_2_component)[random.randint(0,10)]] + ","
+                self.prompt_component.value += self.hm2prompt
         else:
             self.prompt_component.value += self.hm2prompt
-        print(rs4)
-        print(len(self.hm_config_3_component))
+            btn2text = "鎖定:"
+            try:
+                btn2text += self.localizations_component[self.hm2btntext]
+            except:
+                btn2text += self.hm2btntext        
 
         if(self.hm3prompt==""):
             if(rs4 == False):
@@ -1015,31 +1149,73 @@ class PresetManager(scripts.Script):
 
         self.prompt_component.value += self.allfuncprompt
 
-        return self.prompt_component.value
+        return [self.prompt_component.value, btn1text, btn2text]
     
     #自訂1
     def hm1_setting(self, selection, oldprompt):
+        if(selection == ""):
+            selection = "random"
         oldhmprompt = self.hm1prompt
         self.hm1prompt = ""
-        if(selection != "random"):
-            self.hm1prompt = self.hm_config_1_component[selection] + ","
-        if(oldhmprompt!=""):
-            oldprompt = oldprompt.replace(oldhmprompt, self.hm1prompt)
+        btntext = ""
+        #自行異動
+        if(self.hm1btntext != selection):
+            self.locked1 = ""
+            if(selection != "random"):
+                self.hm1prompt = self.hm_config_1_component[selection] + ","
+                self.hm1btntext = selection
+                if(self.locked1 == "Y" ):
+                    btntext = "鎖定:"
+                try:
+                    btntext += self.localizations_component[self.hm1btntext]
+                except:
+                    btntext += self.hm1btntext
+            if(oldhmprompt!=""):
+                oldprompt = oldprompt.replace(oldhmprompt, self.hm1prompt)
+            else:
+                oldprompt += "," + self.hm1prompt
         else:
-            oldprompt += "," + self.hm1prompt
-        return oldprompt
+            if(selection != "random"):
+                self.hm1prompt = self.hm_config_1_component[selection] + ","
+            if(self.locked1 == "Y" ):
+                btntext = "鎖定:"
+            try:
+                btntext += self.localizations_component[self.hm1btntext]
+            except:
+                btntext += self.hm1btntext
+        return [oldprompt,btntext]
 
     #自訂2
     def hm2_setting(self, selection, oldprompt):
+        if(selection == ""):
+            selection = "random"
         oldhmprompt = self.hm2prompt
         self.hm2prompt = ""
-        if(selection != "random"):
-            self.hm2prompt = self.hm_config_2_component[selection] + ","
-        if(oldhmprompt!=""):
-            oldprompt = oldprompt.replace(oldhmprompt, self.hm2prompt)
+        btntext = ""
+        #自行異動
+        if(self.hm2btntext != selection):
+            self.locked2 = ""
+            if(selection != "random"):
+                self.hm2prompt = self.hm_config_2_component[selection] + ","
+                self.hm2btntext = selection
+                try:
+                    btntext = self.localizations_component[self.hm2btntext]
+                except:
+                    btntext = self.hm2btntext
+            if(oldhmprompt!=""):
+                oldprompt = oldprompt.replace(oldhmprompt, self.hm2prompt)
+            else:
+                oldprompt += "," + self.hm2prompt
         else:
-            oldprompt += "," + self.hm2prompt
-        return oldprompt
+            if(selection != "random"):
+                self.hm2prompt = self.hm_config_2_component[selection] + ","
+            if(self.locked2 == "Y" ):
+                btntext = "鎖定:"
+            try:
+                btntext += self.localizations_component[self.hm2btntext]
+            except:
+                btntext += self.hm2btntext
+        return [oldprompt,btntext]
 
     #自訂3
     def hm3_setting(self, selection, oldprompt):
@@ -1090,7 +1266,7 @@ class PresetManager(scripts.Script):
         return oldprompt
     
     #細節
-    def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12):
+    def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12,fv13):
         self.allfuncprompt = ""
         oldprompt = oldprompt.replace("(Girl trembling with sexual climax)++,", "")
         oldprompt = oldprompt.replace("<lyco:GoodHands-beta2:1.4>,", "")
@@ -1098,6 +1274,7 @@ class PresetManager(scripts.Script):
         oldprompt = oldprompt.replace("<lora:AGFIN:0.8>,AG,", "")
         oldprompt = oldprompt.replace("<lora:BigBeautifulNipples_v1:1>,", "")
         oldprompt = oldprompt.replace("thick thighs,", "")
+        oldprompt = oldprompt.replace("<lora:ChihunHentai_20230709225610-000004:1>,ChihunHentai,", "")
         oldprompt = oldprompt.replace("<lora:Shinyskin-000018:0.6>,", "")
         oldprompt = oldprompt.replace("<lora:ugly_bastard_v5.4a:1.5>,", "")
         oldprompt = oldprompt.replace("OverallDetail++,", "")
@@ -1118,16 +1295,18 @@ class PresetManager(scripts.Script):
         if(fv6):
             self.allfuncprompt += "thick thighs,"
         if(fv7):
-            self.allfuncprompt += "<lora:Shinyskin-000018:0.6>,"
+            self.allfuncprompt += "<lora:ChihunHentai_20230709225610-000004:1>,ChihunHentai,"
         if(fv8):
-            self.allfuncprompt += "<lora:ugly_bastard_v5.4a:1.5>,"
+            self.allfuncprompt += "<lora:Shinyskin-000018:0.6>,"
         if(fv9):
-            self.allfuncprompt += "OverallDetail++,"
+            self.allfuncprompt += "<lora:ugly_bastard_v5.4a:1.5>,"
         if(fv10):
-            self.allfuncprompt += "<lora:add_detail:0.2>,"
+            self.allfuncprompt += "OverallDetail++,"
         if(fv11):
-            self.allfuncprompt += "(masterpiece,best quality:1.4),"
+            self.allfuncprompt += "<lora:add_detail:0.2>,"
         if(fv12):
+            self.allfuncprompt += "(masterpiece,best quality:1.4),"
+        if(fv13):
             self.allfuncprompt += "RAW photo,realistic,"
         oldprompt += self.allfuncprompt
         return oldprompt
@@ -1154,6 +1333,89 @@ class PresetManager(scripts.Script):
             mprompt1 += "pubic hair,"
         return [isuse,model1,mprompt1]
     
+    def prompt_lock1(self):
+        if(self.locked1 == ""):
+            self.locked1 = "Y"
+            self.hm1prompt = self.hm1btntext
+            try:
+                btntext = "鎖定:" + self.localizations_component[self.hm1btntext]
+            except:
+                btntext = "鎖定:" + self.hm1btntext
+        else:
+            self.locked1 = ""
+            try:
+                btntext = self.localizations_component[self.hm1btntext]
+            except:
+                btntext = self.hm1btntext
+            self.hm1prompt = ""
+        return [self.hm1prompt, btntext]
+    
+    def prompt_lock2(self):
+        if(self.locked2 == ""):
+            self.locked2 = "Y"
+            self.hm2prompt = self.hm2btntext
+            try:
+                btntext = "鎖定:" + self.localizations_component[self.hm2btntext]
+            except:
+                btntext = "鎖定:" + self.hm2btntext
+        else:
+            self.locked2 = ""
+            btntext = self.hm2prompt
+            self.hm2prompt = ""
+        return [self.hm2prompt, btntext]
+    
+    def cprompt_send(self, oldprompt, input_prompt):
+        generated_texts = []
+        generated_texts = self.send_request(input_prompt)
+        #clear beafore
+        oldprompt = oldprompt.replace(self.oldcprompt, '')
+        self.oldcprompt = ''
+        for text in generated_texts:
+            self.oldcprompt += text
+        self.oldcprompt = self.oldcprompt.replace(", ", ",") 
+        oldprompt = oldprompt + ',' + self.oldcprompt
+        print(f"llama3: {self.oldcprompt}")
+        return oldprompt
+    
+    def send_request(self, input_prompt, **kwargs):
+        prime_directive = textwrap.dedent("""\
+            Act as a prompt maker with the following guidelines:               
+            - Break keywords by commas.
+            - Provide high-quality, non-verbose, coherent, brief, concise, and not superfluous prompts.
+            - Focus solely on the visual elements of the picture; avoid art commentaries or intentions.
+            - Construct the prompt with the component format:
+            1. Start with the subject and keyword description.
+            2. Follow with motion keyword description.
+            3. Follow with scene keyword description.
+            4. Finish with background and keyword description.
+            - Limit yourself to no more than 20 keywords per component  
+            - Include all the keywords from the user's request verbatim as the main subject of the response.
+            - Be varied and creative.
+            - Always reply on the same line and no more than 100 words long. 
+            - Do not enumerate or enunciate components.
+            - Create creative additional information in the response.    
+            - Response in English.                                                    
+            The followin is an illustartive example for you to see how to construct a prompt your prompts should follow this format but always coherent to the subject worldbuilding or setting and cosider the elemnts relationship.
+            Example:
+            Demon Hunter,Cyber City,A Demon Hunter,standing,lone figure,glow eyes,deep purple light,cybernetic exoskeleton,sleek,metallic,glowing blue accents,energy weapons,Fighting Demon,grotesque creature,twisted metal,glowing red eyes,sharp claws,towering structures,shrouded haze,shimmering energy,                            
+            Make a prompt for the following Subject:
+            """)
+        data = {
+                'model': 'impactframes/llama3_ifai_sd_prompt_mkr_q4km:latest',
+                'messages': [
+                    {"role": "system", "content": prime_directive},
+                    {"role": "user", "content": input_prompt}
+                ],  
+            }
+        headers = kwargs.get('headers', {"Content-Type": "application/json"})
+        base_url = f'http://127.0.0.1:11434/v1/chat/completions'
+        response = requests.post(base_url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            return response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+        else:
+            print(f"Error: Request failed with status code {response.status_code}")
+            return []
 
     def local_request_restart(self):
         "Restart button"

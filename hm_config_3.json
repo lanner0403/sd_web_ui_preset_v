@@ -156,5 +156,6 @@
     "VerticalArmbraV1.4": "<lora:VerticalArmbraV1.4:1>",
     "onsen": "<lora:wqmy_v1_03:1>,wqmy,partially submerged",
     "\u80af\u5fb7\u57fa v2": "<lora:\u80af\u5fb7\u57fa v2:1>,kendeji,fried chicken",
-    "tentacleLake": "<lora:tentacleLake:0.8>,tentacles,lake,underground,dungeon,full body"
+    "tentacleLake": "<lora:tentacleLake:0.8>,tentacles,lake,underground,dungeon,full body",
+    "messyHikikomoriRoom": "<lora:messyHikikomoriRoom:1>,messy,messy room,trash bag,sitting on chair,computer,backlighting"
 }
