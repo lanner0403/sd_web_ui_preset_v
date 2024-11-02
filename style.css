@@ -40,6 +40,21 @@
 #preset-util_save_qs_bttn, #preset-util_save_ds_bttn{
     min-height: 100% !important;
 }
+
+#preset-v_Preset1_btn,
+#preset-v_Preset2_btn,
+#preset-v_Preset3_btn,
+#preset-v_size1_btn,
+#preset-v_size2_btn,
+#preset-v_size3_btn,
+#preset-v_hide_all_bttn,
+#preset-v_show_all_bttn,
+#preset-v_lock1_btn
+ {
+    min-width: min(80px, 100%) !important;
+}
+
+
 /*
 @media (min-width: 708px){
     #txt2img_preset_manager_accordion, #img2img_preset_manager_accordion{

@@ -235,21 +235,18 @@ class PresetManager(scripts.Script):
             #按鈕版
             PresetManager.txt2img_preset1_btn = gr.Button(
                 value="快速",
-                label="Preset1",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_Preset1_btn"
             )
             PresetManager.txt2img_preset2_btn = gr.Button(
                 value="優質",
-                label="Preset2",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_Preset2_btn"
             )
             PresetManager.txt2img_preset3_btn = gr.Button(
                 value="極優",
-                label="Preset3",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_Preset3_btn"
@@ -257,35 +254,30 @@ class PresetManager(scripts.Script):
 
             PresetManager.txt2img_size1_btn = gr.Button(
                 value="寬",
-                label="Size1",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_size1_btn"
             )
             PresetManager.txt2img_size2_btn = gr.Button(
                 value="高",
-                label="Size2",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_size2_btn"
             )
             PresetManager.txt2img_size3_btn = gr.Button(
                 value="方",
-                label="Size3",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_size3_btn"
             )
             PresetManager.txt2img_prompt_btn = gr.Button(
                 value="使用自訂提詞",
-                label="hprompt",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_prompt_btn"
             )
             PresetManager.txt2img_radom_prompt_btn = gr.Button(
                 value="隨機色色",
-                label="randomprompt",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_randomprompt_btn"
@@ -486,21 +478,18 @@ class PresetManager(scripts.Script):
             #鎖定
             PresetManager.txt2img_lock1_btn = gr.Button(
                 value="",
-                label="lock1",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_lock1_btn"
             )
             PresetManager.txt2img_lock2_btn = gr.Button(
                 value="",
-                label="lock2",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_lock2_btn"
             )
             PresetManager.txt2img_lock3_btn = gr.Button(
                 value="",
-                label="lock3",
                 variant="primary",
                 render = False,
                 elem_id=f"{self.elm_prfx}_lock3_btn"

@@ -47,6 +47,5 @@
     "smoking cigarettes": "<lora:smoking_cigarettes_anime_v1:0.4>,smoking a cigarette",
     "spitTake": "<lora:spitTake:1>",
     "time stopface": "<lora:timestopface_v1:0.6>,tsface,timestop face",
-    "yandere face": "<lora:qqq-yandere-v1:1>,yandere",
-    "V-shaped eyebrows": "<lora:doyagao_v080:1>"
+    "yandere face": "<lora:qqq-yandere-v1:1>,yandere"
 }

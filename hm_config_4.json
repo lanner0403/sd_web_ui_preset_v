@@ -64,7 +64,6 @@
     "bottomlessSwamp": "<lora:bottomlessSwamp:1>",
     "bralette-off": "<lora:bralette-off:1>",
     "Bra": "<lora:Brav6fix_v1:1>",
-    "bra under tank top": "<lora:Braundertank1:1>,bra under tank top,bra,tank top",
     "BunnySuit": "<lora:BunnySuit:1>",
     "bunny_outfit12": "<lora:bunny_outfit12:1>",
     "bursting_breasts": "<lora:bursting_breasts:1>",
@@ -268,12 +267,5 @@
     "Overalls": "<lora:Overalls:1>,1girl,overalls,no bra",
     "straitjacket3": "<lora:straitjacket3:1.2>",
     "tutuhltn": "<lora:tutuhltn:1>,tutututu,high heels",
-    "upshorts": "<lora:upshorts_v0.4:1>,upshorts",
-    "Side slit dress with side tie panties": "<lora:drspnts:1>",
-    "Lab coat": "<lora:Lab coat:1>",
-    "Lab coat 2": "<lora:LabCoat-000007:1>,lab coat",
-    "little my cinderella": "<lora:little_my_cinderella-v1:1>,littlemycinderella",
-    "maid bikini": "<lora:maid_bikini-clothesV2:1>,maid bikini,maid headdress,skirt",
-    "Marie swim": "<lora:Marie_swim_v1:1>",
-    "mash": "<lora:mash-05:1>"
+    "upshorts": "<lora:upshorts_v0.4:1>,upshorts"
 }

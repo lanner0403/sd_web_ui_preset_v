@@ -1,17 +1,17 @@
 {
     "Width": 
     {
-        "Width": 768,
-        "Height": 512
+        "Width": 1024,
+        "Height": 576
    },
     "Height": 
     {
-        "Width": 512,
-        "Height": 768
+        "Width": 576,
+        "Height": 1024
    },
     "Square": 
     {
-        "Width": 512,
-        "Height": 512
-   },
+        "Width": 1024,
+        "Height": 1024
+   }
 }
