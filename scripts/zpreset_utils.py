@@ -436,6 +436,12 @@ class PresetManager(scripts.Script):
                 container = False,
                 elem_id=f"{self.elm_prfx}_func13_chk"
             )
+            PresetManager.func14_chk =gr.Checkbox(
+                label="people",
+                render = False,
+                container = False,
+                elem_id=f"{self.elm_prfx}_func14_chk"
+            )
 
             #後製
             PresetManager.affunc1_chk =gr.Checkbox(
@@ -603,7 +609,8 @@ class PresetManager(scripts.Script):
                         PresetManager.func11_chk.render() 
                         PresetManager.func12_chk.render() 
                     with gr.Row(equal_height = True):
-                        PresetManager.func13_chk.render() 
+                        PresetManager.func13_chk.render()
+                        PresetManager.func14_chk.render() 
                 #with gr.Accordion(label="後製設定", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_af_setting_accordion"):
                     #with gr.Row(equal_height = True):
                         #self.lock_seed_button.render()
@@ -747,7 +754,7 @@ class PresetManager(scripts.Script):
                 outputs=self.prompt_component
             )
             #細節功能
-            detailinput = [self.prompt_component,PresetManager.func1_chk,PresetManager.func2_chk,PresetManager.func3_chk,PresetManager.func4_chk,PresetManager.func5_chk,PresetManager.func6_chk,PresetManager.func7_chk,PresetManager.func8_chk,PresetManager.func9_chk,PresetManager.func10_chk,PresetManager.func11_chk,PresetManager.func12_chk,PresetManager.func13_chk]
+            detailinput = [self.prompt_component,PresetManager.func1_chk,PresetManager.func2_chk,PresetManager.func3_chk,PresetManager.func4_chk,PresetManager.func5_chk,PresetManager.func6_chk,PresetManager.func7_chk,PresetManager.func8_chk,PresetManager.func9_chk,PresetManager.func10_chk,PresetManager.func11_chk,PresetManager.func12_chk,PresetManager.func13_chk,PresetManager.func14_chk]
             PresetManager.func1_chk.change(
                 fn=self.func_setting,
                 inputs=detailinput,
@@ -809,6 +816,11 @@ class PresetManager(scripts.Script):
                 outputs=self.prompt_component
             )
             PresetManager.func13_chk.change(
+                fn=self.func_setting,
+                inputs=detailinput,
+                outputs=self.prompt_component
+            )
+            PresetManager.func14_chk.change(
                 fn=self.func_setting,
                 inputs=detailinput,
                 outputs=self.prompt_component
@@ -1255,7 +1267,7 @@ class PresetManager(scripts.Script):
         return oldprompt
     
     #細節
-    def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12,fv13):
+    def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12,fv13,fv14):
         self.allfuncprompt = ""
         oldprompt = oldprompt.replace("(Girl trembling with sexual climax)++,", "")
         oldprompt = oldprompt.replace("<lyco:GoodHands-beta2:1.4>,", "")
@@ -1270,6 +1282,7 @@ class PresetManager(scripts.Script):
         oldprompt = oldprompt.replace("<lora:add_detail:0.2>,", "")
         oldprompt = oldprompt.replace("(masterpiece,best quality:1.4),", "")
         oldprompt = oldprompt.replace("RAW photo,realistic,", "")
+        oldprompt = oldprompt.replace("<lora:ponyv4_noob1_2_adamW-000017:0.8>,", "")
 
         if(fv1):
             self.allfuncprompt += "(Girl trembling with sexual climax)++,"
@@ -1297,6 +1310,8 @@ class PresetManager(scripts.Script):
             self.allfuncprompt += "(masterpiece,best quality:1.4),"
         if(fv13):
             self.allfuncprompt += "RAW photo,realistic,"
+        if(fv14):
+            self.allfuncprompt += "<lora:ponyv4_noob1_2_adamW-000017:0.8>,"
         oldprompt += self.allfuncprompt
         return oldprompt
     
