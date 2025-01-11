@@ -39,5 +39,6 @@
 "ugly bastard": "<lora:ugly_bastard_v5.4a:1.5>",
 "blush face": "<lora:yuzuriha_blush_face:0.7>,fullbulsh,blush",
 "torn clothes": "<lora:Clothes:1>,torn clothes",
-"nikke": "<lora:nikke:0.8>,nikke"
+"nikke": "<lora:nikke:0.8>,nikke",
+"People": "<lora:ponyv4_noob1_2_adamW-000017:0.8>"
 }
