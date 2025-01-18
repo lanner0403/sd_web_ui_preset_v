@@ -157,6 +157,7 @@ class PresetManager(scripts.Script):
         self.hm_config_4 = "hm_config_4.json"
         self.hm_config_5 = "hm_config_5.json"
         self.hm_config_6 = "hm_config_6.json"
+        self.hm_config_7 = "hm_config_7.json"
 
         self.localizations = "localizations\zh_TW.json"
 
@@ -166,6 +167,8 @@ class PresetManager(scripts.Script):
         self.hm_config_4_component = self.get_config(self.hm_config_4)
         self.hm_config_5_component = self.get_config(self.hm_config_5)
         self.hm_config_6_component = self.get_config(self.hm_config_6)
+        for item in self.get_character(self.hm_config_7):
+            self.hm_config_1_component.update({item : item})
         
         self.localizations_component = self.get_config2(self.localizations)
 
@@ -290,6 +293,7 @@ class PresetManager(scripts.Script):
                 render = False,
                 elem_id=f"{self.elm_prfx}_hm1_dd"
             )
+
 
             #h_m 姿勢
             PresetManager.txt2img_hm2_dropdown = gr.Dropdown(
@@ -912,6 +916,15 @@ class PresetManager(scripts.Script):
             print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
         return as_dict 
     
+    def get_character(self, path, open_mode='r'):
+        file = os.path.join(PresetManager.BASEDIR, path)
+        try:
+            with open(file, open_mode) as f:
+                as_dict = json.load(f) 
+        except FileNotFoundError as e:
+            print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
+        return [item["title"] for item in as_dict["proj"]]
+    
 
     def fetch_valid_values_from_preset(self, selection, *comps_vals):
         print(selection)
@@ -1061,7 +1074,8 @@ class PresetManager(scripts.Script):
             self.hm1btntext = ""
             if(self.hm1prompt==""):
                 if(rs1 == False):
-                    if(random.randint(0,100) > 20):
+                    ran = random.randint(0,100)
+                    if(ran > 20):
                         self.hm1btntext = list(self.hm_config_1_component)[random.randint(0,len(self.hm_config_1_component)-1)]
                         try:
                             btn1text = self.localizations_component[self.hm1btntext]
@@ -1069,6 +1083,7 @@ class PresetManager(scripts.Script):
                             btn1text = self.hm1btntext
                         self.prompt_component.value += self.hm_config_1_component[self.hm1btntext] + ","
                         chruse = True
+
             else:
                 self.prompt_component.value += self.hm1prompt
         else:
@@ -1265,6 +1280,7 @@ class PresetManager(scripts.Script):
         else:
             oldprompt += "," + self.hm6prompt
         return oldprompt
+    
     
     #細節
     def func_setting(self, oldprompt,fv1,fv2,fv3,fv4,fv5,fv6,fv7,fv8,fv9,fv10,fv11,fv12,fv13,fv14):
